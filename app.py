@@ -30,7 +30,7 @@ import recurring as REC
 import automations as AUTO
 
 app = Flask(__name__)
-app.secret_key = "crm-dev-secret-change-me"
+app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(32)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB upload limit
 login_manager.init_app(app)
 
