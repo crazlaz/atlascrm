@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Invoices') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <h1>{{ t('Invoices') }}</h1>
+  <a href="/invoices/new" class="btn btn-primary">{{ t('+ New Invoice') }}</a>
+</div>
+
+<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem">
+  {% for s in ['','draft','sent','partial','paid','overdue','void'] %}
+  <a href="/invoices{{ '?status='+s if s else '' }}"
+     class="btn btn-sm {{ 'btn-primary' if filter_status==s else 'btn-ghost' }}">
+    {{ s.title() if s else t('All') }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card" style="padding:0">
+  <table>
+    <thead>
+      <tr><th>#</th><th>{{ t('Client') }}</th><th>{{ t('Status') }}</th><th style="text-align:right">{{ t('Total') }}</th><th style="text-align:right">{{ t('Paid') }}</th><th style="text-align:right">{{ t('Balance') }}</th><th>{{ t('Due') }}</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for i in invoices %}
+    {% set tot = inv_totals[i.id] %}
+      <tr>
+        <td><a href="/invoices/{{ i.id }}"><strong>{{ i.invoice_number }}</strong></a></td>
+        <td><a href="/contacts/{{ i.contact_id }}">{{ i.contact_name }}</a></td>
+        <td><span class="badge badge-{{ i.status }}">{{ i.status }}</span></td>
+        <td style="text-align:right;font-weight:600">${{ "%.2f"|format(tot.total) }}</td>
+        <td style="text-align:right;color:var(--success)">${{ "%.2f"|format(tot.paid) }}</td>
+        <td style="text-align:right;font-weight:700;color:{{ 'var(--success)' if tot.balance==0 else 'var(--danger)' }}">
+          ${{ "%.2f"|format(tot.balance) }}
+        </td>
+        <td style="color:var(--text3);font-size:.83rem">{{ i.due_date or '—' }}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <a href="/invoices/{{ i.id }}" class="btn btn-ghost btn-sm">{{ t('View') }}</a>
+          <a href="/invoices/{{ i.id }}/print" target="_blank" class="btn btn-ghost btn-sm">{{ t('Print') }}</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" style="color:var(--text3);padding:2rem;text-align:center">
+        {{ t('No invoices yet.') }} <a href="/invoices/new">{{ t('Create the first one.') }}</a>
+      </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if invoices %}
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">
+  {% set total_out  = inv_totals.values()|sum(attribute='total') %}
+  {% set total_paid = inv_totals.values()|sum(attribute='paid') %}
+  {% set total_bal  = inv_totals.values()|sum(attribute='balance') %}
+  <div class="card" style="padding:.6rem 1.1rem;flex:1;text-align:center">
+    <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">{{ t('Total Invoiced') }}</div>
+    <div style="font-size:1.3rem;font-weight:800;margin-top:.1rem">${{ "%.2f"|format(total_out) }}</div>
+  </div>
+  <div class="card" style="padding:.6rem 1.1rem;flex:1;text-align:center">
+    <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">{{ t('Collected') }}</div>
+    <div style="font-size:1.3rem;font-weight:800;color:var(--success);margin-top:.1rem">${{ "%.2f"|format(total_paid) }}</div>
+  </div>
+  <div class="card" style="padding:.6rem 1.1rem;flex:1;text-align:center">
+    <div style="font-size:.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:.4px">{{ t('Outstanding') }}</div>
+    <div style="font-size:1.3rem;font-weight:800;color:var(--danger);margin-top:.1rem">${{ "%.2f"|format(total_bal) }}</div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

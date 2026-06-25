@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Company Settings') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1>{{ t('Company Settings') }}</h1>
+  <a href="/settings" class="btn btn-ghost btn-sm">← {{ t('Settings') }}</a>
+</div>
+
+<p style="color:var(--text3);font-size:.87rem;margin-bottom:1.25rem">
+  {{ t('This information appears on every printed estimate and invoice.') }}
+</p>
+
+<div class="card" style="max-width:680px">
+  <form method="post">
+    <h2 style="margin-bottom:.75rem">{{ t('Business Info') }}</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem" class="two-col">
+      <div style="grid-column:1/-1">
+        <label>{{ t('Company Name') }}</label>
+        <input type="text" name="name" value="{{ co.name or '' }}" placeholder="{{ t('Atlas Hardscaping LLC') }}">
+      </div>
+      <div style="grid-column:1/-1">
+        <label>{{ t('Street Address') }}</label>
+        <input type="text" name="address" value="{{ co.address or '' }}" placeholder="{{ t('123 Main St') }}">
+      </div>
+      <div>
+        <label>{{ t('City') }}</label>
+        <input type="text" name="city" value="{{ co.city or '' }}">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div>
+          <label>{{ t('State') }}</label>
+          <input type="text" name="state" value="{{ co.state or '' }}" maxlength="2" placeholder="FL">
+        </div>
+        <div>
+          <label>{{ t('ZIP') }}</label>
+          <input type="text" name="zip" value="{{ co.zip or '' }}">
+        </div>
+      </div>
+      <div>
+        <label>{{ t('Phone') }}</label>
+        <input type="text" name="phone" value="{{ co.phone or '' }}" placeholder="(555) 000-0000">
+      </div>
+      <div>
+        <label>{{ t('Email') }}</label>
+        <input type="email" name="email" value="{{ co.email or '' }}" placeholder="{{ t('info@yourcompany.com') }}">
+      </div>
+      <div style="grid-column:1/-1">
+        <label>{{ t('Website') }}</label>
+        <input type="text" name="website" value="{{ co.website or '' }}" placeholder="{{ t('www.yourcompany.com') }}">
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:1.25rem 0">
+
+    <h2 style="margin-bottom:.75rem">{{ t('Billing Defaults') }}</h2>
+    <label>{{ t('Default Tax Rate (%)') }}</label>
+    <input type="number" name="tax_rate" step="0.1" min="0" value="{{ co.tax_rate or 0 }}"
+           style="max-width:160px">
+
+    <label>{{ t('Default Estimate Terms') }}</label>
+    <textarea name="estimate_terms" rows="2">{{ co.estimate_terms or t('This estimate is valid for 30 days.') }}</textarea>
+
+    <label>{{ t('Default Invoice Terms') }}</label>
+    <textarea name="invoice_terms" rows="2">{{ co.invoice_terms or t('Payment due within 30 days.') }}</textarea>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('Save Settings') }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

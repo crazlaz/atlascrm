@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Reminders') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Reminders') }}</h1>
+
+{% if due %}
+<div class="card" style="border-left:4px solid #ef4444">
+  <h2 style="color:#ef4444">{{ t('Overdue') }} ({{ due|length }})</h2>
+  <table>
+    <thead><tr><th>{{ t('Due') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Note') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for r in due %}
+      <tr>
+        <td style="color:#ef4444;white-space:nowrap">{{ r.due_at[:16] }}</td>
+        <td>{% if r.contact_id %}<a href="/contacts/{{ r.contact_id }}">{{ r.contact_name }}</a>{% else %}—{% endif %}</td>
+        <td>{{ r.body }}</td>
+        <td>
+          <form method="post" action="/reminders/{{ r.id }}/done">
+            <button class="btn btn-sm btn-primary" type="submit">{{ t('Done') }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>{{ t('Upcoming (next 30 days)') }}</h2>
+  <table>
+    <thead><tr><th>{{ t('Due') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Note') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for r in upcoming %}
+      <tr>
+        <td style="white-space:nowrap">{{ r.due_at[:16] }}</td>
+        <td>{% if r.contact_id %}<a href="/contacts/{{ r.contact_id }}">{{ r.contact_name }}</a>{% else %}—{% endif %}</td>
+        <td>{{ r.body }}</td>
+        <td>
+          <form method="post" action="/reminders/{{ r.id }}/done">
+            <button class="btn btn-sm btn-ghost" type="submit">{{ t('Done') }}</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" style="color:#9ca3af">{{ t('No upcoming reminders.') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>{{ t('New Reminder') }}</h2>
+  <form method="post" action="/reminders/new">
+    <label>{{ t('Contact') }}</label>
+    <select name="contact_id">
+      <option value="">— {{ t('none') }} —</option>
+      {% for c in contacts %}
+        <option value="{{ c.id }}">{{ c.first_name }} {{ c.last_name }}</option>
+      {% endfor %}
+    </select>
+    <label>{{ t('Due date & time') }}</label>
+    <input type="datetime-local" name="due_at" required>
+    <label>{{ t('Note') }}</label>
+    <input type="text" name="body" placeholder="{{ t('Reminder text…') }}" required>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">{{ t('Set Reminder') }}</button></div>
+  </form>
+</div>
+{% endblock %}

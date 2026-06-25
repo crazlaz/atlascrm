@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Drip Sequences') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1>{{ t('Drip Sequences') }}</h1>
+  <button class="btn btn-primary" onclick="openModal('new-seq-modal')">{{ t('+ New Sequence') }}</button>
+</div>
+
+{% if sequences %}
+<div class="card" style="padding:0">
+  <table>
+    <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Description') }}</th><th>{{ t('Steps') }}</th><th>{{ t('Active Enrollments') }}</th><th></th></tr></thead>
+    <tbody>
+    {% for s in sequences %}
+      <tr>
+        <td><a href="/drip/{{ s.id }}"><strong>{{ s.name }}</strong></a></td>
+        <td style="color:var(--text3);font-size:.85rem">{{ s.description or '—' }}</td>
+        <td><span class="badge">{{ s.step_count }}</span></td>
+        <td><span class="badge badge-qualified">{{ s.enrollment_count }}</span></td>
+        <td style="text-align:right">
+          <a href="/drip/{{ s.id }}" class="btn btn-ghost btn-sm">{{ t('Edit') }}</a>
+          <form method="post" action="/drip/{{ s.id }}/delete" style="display:inline"
+                onsubmit="return confirm('{{ t('Delete sequence?') }}')">
+            <button class="btn btn-sm btn-danger">{{ t('Delete') }}</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:2rem;color:var(--text3)">
+  <p>{{ t('No drip sequences yet. Create one to automate your follow-up emails.') }}</p>
+</div>
+{% endif %}
+
+<!-- new sequence modal -->
+<div class="modal-overlay" id="new-seq-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('New Drip Sequence') }}</h2>
+      <button class="modal-close" onclick="closeModal('new-seq-modal')">✕</button>
+    </div>
+    <form method="post" action="/drip/new">
+      <label>{{ t('Name') }}</label>
+      <input type="text" name="name" placeholder="{{ t('3-touch follow-up') }}" required>
+      <label>{{ t('Description') }}</label>
+      <input type="text" name="description" placeholder="{{ t('Optional description') }}">
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Create') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('new-seq-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

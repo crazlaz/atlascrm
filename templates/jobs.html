@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Jobs') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <h1>{{ t('Jobs') }}</h1>
+  <a href="/jobs/new" class="btn btn-primary">{{ t('+ New Job') }}</a>
+</div>
+
+<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem">
+  {% for s, label in statuses.items() %}
+  <a href="/jobs?status={{ s }}" style="text-decoration:none">
+    <div class="card" style="padding:.6rem 1rem;text-align:center;min-width:90px;
+      {{ 'border:2px solid var(--accent);' if filter_status==s else '' }}">
+      <div style="font-size:1.4rem;font-weight:800">{{ summary.get(s,0) }}</div>
+      <div style="font-size:.75rem;color:var(--text3);margin-top:.15rem">{{ label }}</div>
+    </div>
+  </a>
+  {% endfor %}
+  {% if filter_status %}
+  <a href="/jobs" class="btn btn-ghost btn-sm" style="align-self:center">{{ t('Clear filter') }}</a>
+  {% endif %}
+</div>
+
+<div class="card" style="padding:.75rem 1rem;margin-bottom:1rem">
+  <form method="get" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">
+    <div>
+      <label style="margin-top:0">{{ t('Status') }}</label>
+      <select name="status">
+        <option value="">{{ t('All statuses') }}</option>
+        {% for s, label in statuses.items() %}
+          <option value="{{ s }}" {{ 'selected' if filter_status==s }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label style="margin-top:0">{{ t('Type') }}</label>
+      <select name="type">
+        <option value="">{{ t('All types') }}</option>
+        {% for jt in job_types %}
+          <option value="{{ jt }}" {{ 'selected' if filter_type==jt }}>{{ jt.replace('_',' ').title() }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary btn-sm" type="submit">{{ t('Filter') }}</button>
+    <a href="/jobs" class="btn btn-ghost btn-sm">{{ t('Clear') }}</a>
+  </form>
+</div>
+
+<div class="card" style="padding:0">
+  <table>
+    <thead>
+      <tr><th>{{ t('Job') }}</th><th>{{ t('Type') }}</th><th>{{ t('Client') }}</th><th>{{ t('Address') }}</th><th>{{ t('Start') }}</th><th>{{ t('Status') }}</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for j in jobs %}
+      <tr>
+        <td><a href="/jobs/{{ j.id }}"><strong>{{ j.title }}</strong></a></td>
+        <td style="color:var(--text2);font-size:.83rem">{{ j.job_type.replace('_',' ').title() }}</td>
+        <td><a href="/contacts/{{ j.contact_id }}">{{ j.contact_name }}</a></td>
+        <td style="color:var(--text3);font-size:.82rem">{{ j.city }}{{ ', ' + j.state if j.state else '' }}</td>
+        <td style="color:var(--text3);font-size:.82rem">{{ j.start_date or '—' }}</td>
+        <td><span class="badge badge-{{ j.status }}">{{ statuses[j.status] }}</span></td>
+        <td style="text-align:right;white-space:nowrap">
+          <a href="/estimates/new?job_id={{ j.id }}&contact_id={{ j.contact_id }}" class="btn btn-ghost btn-sm">{{ t('Estimate') }}</a>
+          <a href="/invoices/new?job_id={{ j.id }}&contact_id={{ j.contact_id }}" class="btn btn-ghost btn-sm">{{ t('Invoice') }}</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" style="color:var(--text3);padding:2rem;text-align:center">
+        {{ t('No jobs found.') }} <a href="/jobs/new">{{ t('Create the first one.') }}</a>
+      </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+<!--
+  Atlas Enterprises — Lead Capture Form Embed
+  Paste this anywhere on https://atlasent.netlify.app
+
+  Replace YOUR_CRM_URL with the public URL where crmpy is running,
+  e.g. https://your-server.com  or  http://localhost:5000 for local testing.
+-->
+
+<style>
+  #crm-lead-form { font-family: system-ui, sans-serif; max-width: 420px; }
+  #crm-lead-form input {
+    display: block; width: 100%; margin: .4rem 0 .85rem;
+    padding: .55rem .75rem; border: 1px solid #d1d5db;
+    border-radius: 6px; font-size: .95rem;
+  }
+  #crm-lead-form label { font-size: .88rem; font-weight: 600; color: #374151; }
+  #crm-lead-form button {
+    background: #4f46e5; color: #fff; border: none; border-radius: 6px;
+    padding: .65rem 1.5rem; font-size: 1rem; cursor: pointer; width: 100%;
+  }
+  #crm-lead-form button:hover { background: #4338ca; }
+  #crm-lead-msg { margin-top: .75rem; font-size: .9rem; display: none; }
+  #crm-lead-msg.ok  { color: #15803d; }
+  #crm-lead-msg.err { color: #dc2626; }
+</style>
+
+<form id="crm-lead-form">
+  <label for="crm-fname">First Name *</label>
+  <input id="crm-fname" type="text" placeholder="Jane" required>
+
+  <label for="crm-lname">Last Name</label>
+  <input id="crm-lname" type="text" placeholder="Smith">
+
+  <label for="crm-email">Email *</label>
+  <input id="crm-email" type="email" placeholder="jane@example.com" required>
+
+  <label for="crm-phone">Phone</label>
+  <input id="crm-phone" type="tel" placeholder="+1 555 000 0000">
+
+  <label for="crm-company">Company</label>
+  <input id="crm-company" type="text" placeholder="Acme Corp">
+
+  <button type="submit">Get in Touch →</button>
+  <div id="crm-lead-msg"></div>
+</form>
+
+<script>
+(function () {
+  const CRM_URL = 'YOUR_CRM_URL';   // ← change this
+
+  document.getElementById('crm-lead-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const btn = this.querySelector('button');
+    const msg = document.getElementById('crm-lead-msg');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    msg.style.display = 'none';
+
+    try {
+      const res = await fetch(CRM_URL + '/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: document.getElementById('crm-fname').value.trim(),
+          last_name:  document.getElementById('crm-lname').value.trim(),
+          email:      document.getElementById('crm-email').value.trim(),
+          phone:      document.getElementById('crm-phone').value.trim(),
+          company:    document.getElementById('crm-company').value.trim(),
+        })
+      });
+      if (res.ok) {
+        msg.className = 'ok';
+        msg.textContent = "Thanks! We'll be in touch soon.";
+        this.reset();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        msg.className = 'err';
+        msg.textContent = d.error || 'Something went wrong. Please try again.';
+      }
+    } catch (err) {
+      msg.className = 'err';
+      msg.textContent = 'Network error. Please try again.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Get in Touch →';
+      msg.style.display = 'block';
+    }
+  });
+})();
+</script>

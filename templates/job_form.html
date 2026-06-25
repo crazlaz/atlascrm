@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Edit Job') if job else t('New Job') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1>{{ t('Edit Job') if job else t('New Job') }}</h1>
+  <a href="/jobs" class="btn btn-ghost btn-sm">← {{ t('Jobs') }}</a>
+</div>
+
+<div class="card" style="max-width:720px">
+  <form method="post">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem" class="two-col">
+      <div style="grid-column:1/-1">
+        <label>{{ t('Job Title *') }}</label>
+        <input type="text" name="title" value="{{ job.title if job else '' }}"
+               placeholder="{{ t('e.g. Backyard Patio Install') }}" required>
+      </div>
+      <div>
+        <label>{{ t('Client *') }}</label>
+        <select name="contact_id" required>
+          <option value="">{{ t('— select client —') }}</option>
+          {% for c in contacts %}
+            <option value="{{ c.id }}"
+              {{ 'selected' if (job and job.contact_id==c.id) or preselect==c.id|string }}>
+              {{ c.first_name }} {{ c.last_name }}{% if c.company %} ({{ c.company }}){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t('Job Type') }}</label>
+        <select name="job_type">
+          {% for jt in job_types %}
+            <option value="{{ jt }}" {{ 'selected' if job and job.job_type==jt }}>
+              {{ jt.replace('_',' ').title() }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t('Status') }}</label>
+        <select name="status">
+          {% for s, label in statuses.items() %}
+            <option value="{{ s }}" {{ 'selected' if job and job.status==s }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t('Start Date') }}</label>
+        <input type="date" name="start_date" value="{{ job.start_date or '' if job else '' }}">
+      </div>
+      <div>
+        <label>{{ t('End Date') }}</label>
+        <input type="date" name="end_date" value="{{ job.end_date or '' if job else '' }}">
+      </div>
+      <div style="grid-column:1/-1">
+        <label>{{ t('Job Site Address') }}</label>
+        <input type="text" name="address" value="{{ job.address or '' if job else '' }}" placeholder="{{ t('Street address') }}">
+      </div>
+      <div>
+        <label>{{ t('City') }}</label>
+        <input type="text" name="city" value="{{ job.city or '' if job else '' }}">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div>
+          <label>{{ t('State') }}</label>
+          <input type="text" name="state" value="{{ job.state or '' if job else '' }}" maxlength="2" placeholder="FL">
+        </div>
+        <div>
+          <label>{{ t('ZIP') }}</label>
+          <input type="text" name="zip" value="{{ job.zip or '' if job else '' }}">
+        </div>
+      </div>
+      <div style="grid-column:1/-1">
+        <label>{{ t('Description') }} <span style="font-weight:400;color:var(--text3)">({{ t('shown to client') }})</span></label>
+        <textarea name="description" rows="3"
+                  placeholder="{{ t('Brief description of the scope of work…') }}">{{ job.description or '' if job else '' }}</textarea>
+      </div>
+      <div style="grid-column:1/-1">
+        <label>{{ t('Internal Notes') }} <span style="font-weight:400;color:var(--text3)">({{ t('not shown to client') }})</span></label>
+        <textarea name="internal_notes" rows="2"
+                  placeholder="{{ t('Crew notes, access codes, site conditions…') }}">{{ job.internal_notes or '' if job else '' }}</textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('Save Changes') if job else t('Create Job') }}</button>
+      <a href="{{ '/jobs/' + job.id|string if job else '/jobs' }}" class="btn btn-ghost">{{ t('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

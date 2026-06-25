@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ est.estimate_number }} — {{ t('ESTIMATE') }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, Arial, sans-serif; font-size: 13px; color: #1a1a2e; background: #fff; }
+    .page { max-width: 780px; margin: 0 auto; padding: 2.5rem 2rem; }
+    h1 { font-size: 2rem; color: #4f46e5; }
+    h2 { font-size: .95rem; font-weight: 700; margin-bottom: .4rem; color: #374151; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+    .company-name { font-size: 1.4rem; font-weight: 800; color: #1a1a2e; }
+    .company-info { color: #6b7280; font-size: .85rem; line-height: 1.7; margin-top: .25rem; }
+    .badge { background: #ede9fe; color: #4f46e5; padding: .2rem .6rem; border-radius: 99px; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; padding: 1.25rem; background: #f9fafb; border-radius: 8px; }
+    .meta-label { color: #6b7280; font-size: .78rem; text-transform: uppercase; letter-spacing: .4px; margin-bottom: .2rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    thead th { background: #4f46e5; color: #fff; padding: .6rem .75rem; text-align: left; font-size: .82rem; }
+    thead th:not(:first-child) { text-align: right; }
+    tbody td { padding: .55rem .75rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    tbody td:not(:first-child) { text-align: right; }
+    tbody tr:nth-child(even) { background: #f9fafb; }
+    .totals-table { width: 280px; margin-left: auto; }
+    .totals-table td { padding: .3rem 0; }
+    .totals-table .total-row td { border-top: 2px solid #4f46e5; padding-top: .6rem; font-size: 1.05rem; font-weight: 700; color: #4f46e5; }
+    .notes { margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; }
+    .terms { margin-top: 1rem; color: #6b7280; font-size: .82rem; line-height: 1.6; }
+    .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: .78rem; text-align: center; }
+    .signature-block { margin-top: 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .sig-line { border-top: 1px solid #d1d5db; padding-top: .4rem; margin-top: 2rem; color: #6b7280; font-size: .82rem; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- print button -->
+  <div class="no-print" style="margin-bottom:1rem;text-align:right">
+    <button onclick="window.print()"
+            style="background:#4f46e5;color:#fff;border:none;padding:.5rem 1.25rem;
+                   border-radius:6px;cursor:pointer;font-size:.9rem">
+      🖨 {{ t('Print / Save as PDF') }}
+    </button>
+    <button onclick="window.close()"
+            style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;
+                   padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.9rem;margin-left:.5rem">
+      {{ t('Close') }}
+    </button>
+  </div>
+
+  <!-- header -->
+  <div class="header">
+    <div>
+      <div class="company-name">{{ co.name or t('Your Company Name') }}</div>
+      <div class="company-info">
+        {% if co.address %}{{ co.address }}<br>{% endif %}
+        {% if co.city %}{{ co.city }}{{ ', '+co.state if co.state else '' }} {{ co.zip or '' }}<br>{% endif %}
+        {% if co.phone %}{{ co.phone }}<br>{% endif %}
+        {% if co.email %}{{ co.email }}<br>{% endif %}
+        {% if co.website %}{{ co.website }}{% endif %}
+      </div>
+    </div>
+    <div style="text-align:right">
+      <h1>{{ t('ESTIMATE') }}</h1>
+      <div style="margin-top:.4rem;font-size:1rem;font-weight:700;color:#374151">{{ est.estimate_number }}</div>
+      <div style="margin-top:.3rem"><span class="badge">{{ est.status }}</span></div>
+    </div>
+  </div>
+
+  <!-- meta -->
+  <div class="meta-grid">
+    <div>
+      <div class="meta-label">{{ t('Prepared For') }}</div>
+      <strong>{{ est.contact_name }}</strong>
+      {% if est.contact_company %}<div>{{ est.contact_company }}</div>{% endif %}
+      {% if est.contact_email %}<div style="color:#6b7280">{{ est.contact_email }}</div>{% endif %}
+      {% if est.contact_phone %}<div style="color:#6b7280">{{ est.contact_phone }}</div>{% endif %}
+    </div>
+    <div style="text-align:right">
+      <div style="margin-bottom:.5rem">
+        <div class="meta-label">{{ t('Date') }}</div>
+        <div>{{ est.created_at[:10] }}</div>
+      </div>
+      {% if est.valid_until %}
+      <div>
+        <div class="meta-label">{{ t('Valid Until') }}</div>
+        <div>{{ est.valid_until }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- line items -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width:45%">{{ t('Description') }}</th>
+        <th style="width:12%">{{ t('Qty') }}</th>
+        <th style="width:12%">{{ t('Unit') }}</th>
+        <th style="width:15%">{{ t('Unit Price') }}</th>
+        <th style="width:16%">{{ t('Amount') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+      <tr>
+        <td>{{ item.description }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.unit }}</td>
+        <td>${{ "%.2f"|format(item.unit_price) }}</td>
+        <td><strong>${{ "%.2f"|format(item.quantity * item.unit_price) }}</strong></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- totals -->
+  <table class="totals-table">
+    <tbody>
+      <tr><td style="color:#6b7280">{{ t('Subtotal') }}</td><td style="text-align:right">${{ "%.2f"|format(totals.subtotal) }}</td></tr>
+      {% if totals.discount %}
+      <tr><td style="color:#15803d">{{ t('Discount') }}</td><td style="text-align:right;color:#15803d">-${{ "%.2f"|format(totals.discount) }}</td></tr>
+      {% endif %}
+      {% if est.tax_rate %}
+      <tr><td style="color:#6b7280">{{ t('Tax') }} ({{ est.tax_rate }}%)</td><td style="text-align:right">${{ "%.2f"|format(totals.tax) }}</td></tr>
+      {% endif %}
+    </tbody>
+    <tbody>
+      <tr class="total-row">
+        <td>{{ t('Total') }}</td>
+        <td style="text-align:right">${{ "%.2f"|format(totals.total) }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  {% if est.notes %}
+  <div class="notes">
+    <h2>{{ t('Notes') }}</h2>
+    <p style="margin-top:.3rem;color:#374151;line-height:1.6">{{ est.notes }}</p>
+  </div>
+  {% endif %}
+
+  <!-- signature -->
+  <div class="signature-block">
+    <div>
+      <div class="sig-line">{{ t('Client Signature') }}</div>
+      <div class="sig-line" style="margin-top:1rem">{{ t('Printed Name & Date') }}</div>
+    </div>
+    <div>
+      <div class="sig-line">{{ t('Authorized By') }} ({{ co.name or t('Your Company Name') }})</div>
+      <div class="sig-line" style="margin-top:1rem">{{ t('Date') }}</div>
+    </div>
+  </div>
+
+  {% if est.terms %}
+  <div class="terms"><strong>{{ t('Terms & Conditions:') }}</strong> {{ est.terms }}</div>
+  {% endif %}
+
+  <div class="footer">{{ co.name or '' }} · {{ co.phone or '' }} · {{ co.email or '' }}</div>
+
+</div>
+</body>
+</html>

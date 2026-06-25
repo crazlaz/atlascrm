@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}{{ est.estimate_number }} — {{ t('Estimate') }}{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <div>
+    <h1 style="margin:0">{{ est.estimate_number }}</h1>
+    <div style="margin-top:.3rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <span class="badge">{{ est.status }}</span>
+      <a href="/contacts/{{ est.contact_id }}" style="font-size:.85rem">{{ est.contact_name }}</a>
+      {% if est.valid_until %}
+        <span style="color:var(--text3);font-size:.82rem">· {{ t('Valid until') }} {{ est.valid_until }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <a href="/estimates/{{ est.id }}/print" target="_blank" class="btn btn-ghost btn-sm">🖨 {{ t('Print / PDF') }}</a>
+    <a href="/estimates" class="btn btn-ghost btn-sm">← {{ t('Estimates') }}</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem" class="two-col">
+
+  <div>
+    <div class="card" style="padding:0">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0">{{ t('Line Items') }}</h2>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('add-item-modal')">+ {{ t('Add Item') }}</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>{{ t('Description') }}</th><th style="text-align:right">{{ t('Qty') }}</th><th>{{ t('Unit') }}</th><th style="text-align:right">{{ t('Unit Price') }}</th><th style="text-align:right">{{ t('Total') }}</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+          <tr>
+            <td>{{ item.description }}</td>
+            <td style="text-align:right">{{ item.quantity }}</td>
+            <td style="color:var(--text3);font-size:.82rem">{{ item.unit }}</td>
+            <td style="text-align:right">${{ "%.2f"|format(item.unit_price) }}</td>
+            <td style="text-align:right;font-weight:600">${{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+            <td>
+              <form method="post" action="/estimates/{{ est.id }}/items/{{ item.id }}/delete" style="margin:0">
+                <button style="background:none;border:none;color:var(--danger);cursor:pointer">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" style="color:var(--text3);padding:1.5rem;text-align:center">
+            {{ t('No items yet. Add from the catalog or enter custom items.') }}
+          </td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      <div style="padding:1rem 1.25rem;border-top:2px solid var(--border)">
+        <div style="max-width:280px;margin-left:auto;font-size:.9rem">
+          <div style="display:flex;justify-content:space-between;padding:.2rem 0">
+            <span style="color:var(--text2)">{{ t('Subtotal') }}</span>
+            <strong>${{ "%.2f"|format(totals.subtotal) }}</strong>
+          </div>
+          {% if totals.discount %}
+          <div style="display:flex;justify-content:space-between;padding:.2rem 0;color:var(--success)">
+            <span>{{ t('Discount') }}</span>
+            <strong>-${{ "%.2f"|format(totals.discount) }}</strong>
+          </div>
+          {% endif %}
+          {% if est.tax_rate %}
+          <div style="display:flex;justify-content:space-between;padding:.2rem 0">
+            <span style="color:var(--text2)">{{ t('Tax') }} ({{ est.tax_rate }}%)</span>
+            <strong>${{ "%.2f"|format(totals.tax) }}</strong>
+          </div>
+          {% endif %}
+          <div style="display:flex;justify-content:space-between;padding:.5rem 0;
+                      border-top:2px solid var(--border);margin-top:.3rem;font-size:1.1rem">
+            <span><strong>{{ t('Total') }}</strong></span>
+            <strong style="color:var(--accent)">${{ "%.2f"|format(totals.total) }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>{{ t('Status') }}</h2>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        {% for s in ['draft','sent','approved','rejected','expired'] %}
+        <form method="post" action="/estimates/{{ est.id }}/status" style="margin:0">
+          <input type="hidden" name="status" value="{{ s }}">
+          <button class="btn btn-sm" style="width:100%;justify-content:flex-start;
+            {{ 'background:var(--accent);color:#fff;' if est.status==s else 'background:var(--surface2);color:var(--text);border:1px solid var(--border);' }}">
+            {{ '✓ ' if est.status==s else '' }}{{ s.title() }}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+      {% if est.status in ['approved','sent'] %}
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+        <h2 style="font-size:.85rem;margin-bottom:.5rem">{{ t('Convert to Invoice') }}</h2>
+        <form method="post" action="/estimates/{{ est.id }}/convert">
+          <label style="margin-top:0">{{ t('Due Date') }}</label>
+          <input type="date" name="due_date">
+          <button class="btn btn-primary btn-sm" type="submit" style="width:100%;margin-top:.5rem">
+            → {{ t('Create Invoice') }}
+          </button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Add from Catalog') }}</h2>
+      <form method="post" action="/estimates/{{ est.id }}/items" id="catalog-form">
+        <input type="hidden" name="catalog_id" id="cat-id">
+        <label style="margin-top:0">{{ t('Service') }}</label>
+        <select onchange="fillFromCatalog(this)" style="margin-bottom:.5rem">
+          <option value="">{{ t('— pick a service —') }}</option>
+          {% for cat, services in catalog.items() %}
+          <optgroup label="{{ cat }}">
+            {% for s in services %}
+            <option value="{{ s.id }}"
+                    data-desc="{{ s.name }}"
+                    data-unit="{{ s.unit }}"
+                    data-price="{{ s.unit_price }}">
+              {{ s.name }} — ${{ "%.2f"|format(s.unit_price) }}/{{ s.unit }}
+            </option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+        <label>{{ t('Description') }}</label>
+        <input type="text" name="description" id="cat-desc" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <div><label>{{ t('Qty') }}</label><input type="number" name="quantity" id="cat-qty" value="1" step="0.5" min="0"></div>
+          <div><label>{{ t('Unit') }}</label><input type="text" name="unit" id="cat-unit" value="each"></div>
+        </div>
+        <label>{{ t('Unit Price ($)') }}</label>
+        <input type="number" name="unit_price" id="cat-price" step="0.01" min="0" value="0">
+        <button class="btn btn-primary btn-sm" type="submit" style="width:100%;margin-top:.5rem">{{ t('Add Item') }}</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Client Approval') }}</h2>
+      {% if est.approval_token %}
+        <p style="font-size:.82rem;color:var(--text2);margin-bottom:.5rem">{{ t('Approval link is active.') }}</p>
+        <div style="background:var(--surface2);border-radius:6px;padding:.5rem .6rem;font-size:.75rem;
+                    word-break:break-all;color:var(--text2);margin-bottom:.6rem">
+          {{ request.host_url }}approve/{{ est.approval_token }}
+        </div>
+        {% if est.signed_by %}
+          <div style="background:#dcfce7;color:#15803d;padding:.5rem .75rem;border-radius:6px;font-size:.83rem;margin-bottom:.5rem">
+            ✓ {{ t('Signed by') }} <strong>{{ est.signed_by }}</strong><br>
+            <span style="opacity:.75">{{ est.signed_at[:16] if est.signed_at else '' }}</span>
+          </div>
+        {% endif %}
+        <form method="post" action="/estimates/{{ est.id }}/send-approval">
+          <button class="btn btn-ghost btn-sm" type="submit" style="width:100%">{{ t('Resend Email to Client') }}</button>
+        </form>
+      {% else %}
+        <p style="font-size:.83rem;color:var(--text2);margin-bottom:.65rem">
+          {{ t('Generate a secure link the client can use to approve or decline this estimate — no login required.') }}
+        </p>
+        <form method="post" action="/estimates/{{ est.id }}/send-approval">
+          <button class="btn btn-primary btn-sm" type="submit" style="width:100%">
+            🔗 {{ t('Send Approval Link') }}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <form method="post" action="/estimates/{{ est.id }}/delete"
+            onsubmit="return confirm('{{ t('Delete this estimate?') }}')">
+        <button class="btn btn-danger btn-sm" type="submit">{{ t('Delete Estimate') }}</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="add-item-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Add Custom Line Item') }}</h2>
+      <button class="modal-close" onclick="closeModal('add-item-modal')">✕</button>
+    </div>
+    <form method="post" action="/estimates/{{ est.id }}/items">
+      <label>{{ t('Description') }}</label>
+      <input type="text" name="description" required placeholder="{{ t('e.g. Paver base prep') }}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div><label>{{ t('Qty') }}</label><input type="number" name="quantity" value="1" step="0.5" min="0" required></div>
+        <div><label>{{ t('Unit') }}</label><input type="text" name="unit" value="each"></div>
+      </div>
+      <label>{{ t('Unit Price ($)') }}</label>
+      <input type="number" name="unit_price" step="0.01" min="0" value="0" required>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Add Item') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('add-item-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fillFromCatalog(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  document.getElementById('cat-id').value    = opt.value;
+  document.getElementById('cat-desc').value  = opt.dataset.desc  || '';
+  document.getElementById('cat-unit').value  = opt.dataset.unit  || 'each';
+  document.getElementById('cat-price').value = opt.dataset.price || '0';
+}
+</script>
+{% endblock %}

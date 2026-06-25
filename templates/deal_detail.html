@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}{{ deal.title }} — crmpy{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <div>
+    <h1 style="margin:0">{{ deal.title }}</h1>
+    <div style="margin-top:.3rem">
+      <span class="badge badge-{{ deal.stage }}">{{ deal.stage }}</span>
+      <span style="color:var(--text2);font-size:.85rem;margin-left:.5rem">
+        {{ contact.first_name }} {{ contact.last_name }}
+        {% if contact.company %} · {{ contact.company }}{% endif %}
+      </span>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    {% if contact.phone %}
+      <a href="tel:{{ contact.phone }}" class="btn btn-success btn-sm">📞 {{ t('Call') }}</a>
+    {% endif %}
+    {% if contact.email %}
+      <button class="btn btn-primary btn-sm" onclick="openModal('email-modal')">✉ {{ t('Email') }}</button>
+    {% endif %}
+    <a href="/deals/{{ deal.id }}/edit" class="btn btn-ghost btn-sm">{{ t('Edit') }}</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:280px 1fr;gap:1.5rem" class="two-col">
+
+  <div>
+    <div class="card">
+      <h2>{{ t('Details') }}</h2>
+      <div style="font-size:.87rem;line-height:2.1">
+        <div><span style="color:var(--text2)">{{ t('Contact') }}</span><br>
+          <a href="/contacts/{{ contact.id }}">{{ contact.first_name }} {{ contact.last_name }}</a></div>
+        <div><span style="color:var(--text2)">{{ t('Value') }}</span><br>
+          <strong style="font-size:1.1rem">${{ "%.2f"|format(deal.value) }}</strong></div>
+        <div><span style="color:var(--text2)">{{ t('Created') }}</span><br>{{ deal.created_at[:10] }}</div>
+        {% if deal.closed_at %}
+        <div><span style="color:var(--text2)">{{ t('Closed') }}</span><br>{{ deal.closed_at[:10] }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Move Stage') }}</h2>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        {% for s in ['lead','qualified','proposal','won','lost'] %}
+        <form method="post" action="/deals/{{ deal.id }}/stage" style="margin:0">
+          <input type="hidden" name="stage" value="{{ s }}">
+          <button class="btn btn-sm" style="width:100%;justify-content:flex-start;
+            {{ 'background:var(--accent);color:#fff;' if deal.stage==s else 'background:var(--surface2);color:var(--text);border:1px solid var(--border);' }}">
+            <span class="badge badge-{{ s }}" style="margin-right:.4rem">{{ s }}</span>
+            {{ t('✓ current') if deal.stage==s else '' }}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if custom_fields %}
+    <div class="card">
+      <h2>{{ t('Custom Fields') }}</h2>
+      <form method="post" action="/deals/{{ deal.id }}/custom-fields">
+        {% for f in custom_fields %}
+        <label>{{ f.label }}</label>
+        {% if f.field_type == 'boolean' %}
+          <select name="{{ f.label }}">
+            <option value="">—</option>
+            <option value="yes" {{ 'selected' if f.value=='yes' }}>{{ t('Yes') }}</option>
+            <option value="no"  {{ 'selected' if f.value=='no' }}>{{ t('No') }}</option>
+          </select>
+        {% elif f.field_type == 'select' and f.options %}
+          <select name="{{ f.label }}">
+            <option value="">—</option>
+            {% for opt in f.options.split(',') %}
+              <option {{ 'selected' if f.value==opt.strip() }}>{{ opt.strip() }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <input type="{{ 'number' if f.field_type=='number' else 'date' if f.field_type=='date' else 'text' }}"
+                 name="{{ f.label }}" value="{{ f.value or '' }}">
+        {% endif %}
+        {% endfor %}
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" type="submit">{{ t('Save Fields') }}</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h2>{{ t('Add Note') }}</h2>
+      <form method="post" action="/deals/{{ deal.id }}/notes">
+        <textarea name="body" placeholder="{{ t('Write a note…') }}" rows="3"></textarea>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" type="submit">{{ t('Save') }}</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Attachments') }}</h2>
+      {% for a in attachments %}
+        <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;
+                    border-bottom:1px solid var(--border);font-size:.85rem">
+          <span style="flex:1">📎 <a href="/attachments/{{ a.id }}/download">{{ a.filename }}</a></span>
+          <span style="color:var(--text3);font-size:.75rem">{{ (a.size_bytes/1024)|round(1) }} KB</span>
+          <form method="post" action="/attachments/{{ a.id }}/delete" style="margin:0">
+            <button class="btn btn-sm" style="background:none;color:var(--danger);border:none;cursor:pointer"
+                    onclick="return confirm('{{ t('Delete?') }}')">✕</button>
+          </form>
+        </div>
+      {% else %}
+        <p style="color:var(--text3);font-size:.85rem">{{ t('No attachments.') }}</p>
+      {% endfor %}
+      <form method="post" action="/deals/{{ deal.id }}/attachments"
+            enctype="multipart/form-data" style="margin-top:.75rem">
+        <input type="file" name="file" style="font-size:.82rem">
+        <div class="form-actions">
+          <button class="btn btn-ghost btn-sm" type="submit">{{ t('Upload') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>{{ t('Activity Timeline') }}</h2>
+      {% if activity %}
+      <div class="timeline">
+        {% for a in activity %}
+        <div class="timeline-item">
+          <div class="tl-icon tl-{{ a.type }}">
+            {{ {'call':'📞','email':'✉','meeting':'🤝','task':'✅','note':'📝','stage_change':'→'}.get(a.type,'•') }}
+          </div>
+          <div class="tl-body">
+            <strong style="font-size:.85rem">{{ a.summary }}</strong>
+          </div>
+          <div class="tl-time">{{ a.created_at[:16] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p style="color:var(--text3);font-size:.87rem">{{ t('No activity yet.') }}</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Notes') }}</h2>
+      {% for n in notes %}
+        <div style="border-bottom:1px solid var(--border);padding:.6rem 0;font-size:.87rem">
+          <div style="color:var(--text3);font-size:.75rem;margin-bottom:.15rem">{{ n.created_at[:16] }}</div>
+          {{ n.body }}
+        </div>
+      {% else %}
+        <p style="color:var(--text3);font-size:.87rem">{{ t('No notes yet.') }}</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="email-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Send Email to') }} {{ contact.first_name }}</h2>
+      <button class="modal-close" onclick="closeModal('email-modal')">✕</button>
+    </div>
+    <form method="post" action="/contacts/{{ contact.id }}/send-email">
+      <label>{{ t('Template') }}</label>
+      <select id="tpl-select" onchange="applyTemplate(this)">
+        <option value="">{{ t('— blank —') }}</option>
+        {% for tpl in email_templates %}
+          <option value="{{ tpl.id }}" data-subject="{{ tpl.subject }}" data-body="{{ tpl.body }}">{{ tpl.name }}</option>
+        {% endfor %}
+      </select>
+      <label>To</label>
+      <input type="text" name="to" value="{{ contact.email or '' }}" required>
+      <label>{{ t('Subject') }}</label>
+      <input type="text" name="subject" id="email-subject" required>
+      <label>{{ t('Body') }}</label>
+      <textarea name="body" id="email-body" rows="6" required></textarea>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Send') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('email-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function applyTemplate(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  document.getElementById('email-subject').value = opt.dataset.subject || '';
+  document.getElementById('email-body').value    = opt.dataset.body    || '';
+}
+</script>
+{% endblock %}

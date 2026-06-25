@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Pipeline Forecast') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Pipeline Forecast') }}</h1>
+
+<div class="stat-row">
+  <div class="stat"><div class="label">{{ t('Weighted Forecast') }}</div><div class="value">${{ "%.0f"|format(total_weighted) }}</div></div>
+  <div class="stat"><div class="label">{{ t('Best Case') }}</div><div class="value">${{ "%.0f"|format(total_best) }}</div></div>
+  <div class="stat"><div class="label">{{ t('Open Deals') }}</div><div class="value">{{ deals|length }}</div></div>
+</div>
+
+<div class="card">
+  <h2>{{ t('Stage Probabilities') }}</h2>
+  <p style="font-size:.85rem;color:#6b7280;margin-bottom:1rem">
+    {{ t('Weighted value = deal value × close probability for that stage.') }}
+  </p>
+  <table>
+    <thead>
+      <tr><th>{{ t('Stage') }}</th><th>{{ t('Probability') }}</th><th>{{ t('Deals') }}</th><th>{{ t('Raw Value') }}</th><th>{{ t('Weighted') }}</th></tr>
+    </thead>
+    <tbody>
+    {% for row in by_stage %}
+      <tr>
+        <td><span class="badge badge-{{ row.stage }}">{{ row.stage }}</span></td>
+        <td>{{ (row.prob * 100)|int }}%</td>
+        <td>{{ row.count }}</td>
+        <td>${{ "%.0f"|format(row.raw) }}</td>
+        <td style="font-weight:600">${{ "%.0f"|format(row.weighted) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>{{ t('Deal-level Forecast') }}</h2>
+  <table>
+    <thead>
+      <tr><th>{{ t('Deal') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Stage') }}</th><th>{{ t('Value') }}</th><th>{{ t('Prob') }}</th><th>{{ t('Weighted') }}</th><th>{{ t('Age (days)') }}</th></tr>
+    </thead>
+    <tbody>
+    {% for d in deals %}
+      <tr {% if d.age_days > 30 %}style="background:#fffbeb"{% endif %}>
+        <td><a href="/deals/{{ d.id }}">{{ d.title }}</a></td>
+        <td>{{ d.contact_name }}</td>
+        <td><span class="badge badge-{{ d.stage }}">{{ d.stage }}</span></td>
+        <td>${{ "%.0f"|format(d.value) }}</td>
+        <td>{{ (d.prob * 100)|int }}%</td>
+        <td style="font-weight:600">${{ "%.0f"|format(d.weighted) }}</td>
+        <td {% if d.age_days > 30 %}style="color:#d97706;font-weight:600"{% endif %}>
+          {{ d.age_days }}{% if d.age_days > 30 %} ⚠{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

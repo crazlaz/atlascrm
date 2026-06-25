@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Profitability Report') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1>{{ t('Profitability Report') }}</h1>
+  <button class="btn btn-ghost" onclick="window.print()">{{ t('Print / Export') }}</button>
+</div>
+
+<div class="stats-grid" style="margin-bottom:1.5rem">
+  <div class="card stat-card">
+    <div class="stat-label">{{ t('Total Revenue') }}</div>
+    <div class="stat-value">${{ "%.2f"|format(summary.total_revenue) }}</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-label">{{ t('Total Costs') }}</div>
+    <div class="stat-value" style="color:var(--danger)">${{ "%.2f"|format(summary.total_costs) }}</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-label">{{ t('Gross Profit') }}</div>
+    <div class="stat-value" style="color:{{ 'var(--success)' if summary.gross_profit >= 0 else 'var(--danger)' }}">
+      ${{ "%.2f"|format(summary.gross_profit) }}
+    </div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-label">{{ t('Avg Margin') }}</div>
+    <div class="stat-value" style="color:{{ 'var(--success)' if summary.avg_margin >= 0 else 'var(--danger)' }}">
+      {{ "%.1f"|format(summary.avg_margin) }}%
+    </div>
+  </div>
+</div>
+
+<div class="card" style="padding:0">
+  <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem">
+    <strong>{{ t('Jobs Breakdown') }}</strong>
+    <span style="color:var(--text3);font-size:.82rem">({{ t('paid invoices only') }})</span>
+  </div>
+  {% if jobs %}
+  <div style="overflow-x:auto">
+  <table>
+    <thead>
+      <tr>
+        <th>{{ t('Job') }}</th>
+        <th>{{ t('Client') }}</th>
+        <th>{{ t('Revenue') }}</th>
+        <th class="hide-mobile">{{ t('Materials') }}</th>
+        <th class="hide-mobile">{{ t('Labor') }}</th>
+        <th class="hide-mobile">{{ t('Other') }}</th>
+        <th>{{ t('Total Cost') }}</th>
+        <th>{{ t('Profit') }}</th>
+        <th>{{ t('Margin') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for j in jobs %}
+      {% set margin = (j.profit / j.revenue * 100) if j.revenue > 0 else 0 %}
+      <tr>
+        <td><a href="/jobs/{{ j.id }}">{{ j.title }}</a></td>
+        <td style="color:var(--text2);font-size:.85rem">{{ j.contact_name or '—' }}</td>
+        <td style="font-weight:600">${{ "%.0f"|format(j.revenue) }}</td>
+        <td class="hide-mobile" style="color:var(--text2)">${{ "%.0f"|format(j.material_cost) }}</td>
+        <td class="hide-mobile" style="color:var(--text2)">${{ "%.0f"|format(j.labor_cost) }}</td>
+        <td class="hide-mobile" style="color:var(--text2)">${{ "%.0f"|format(j.other_cost) }}</td>
+        <td style="color:var(--danger)">${{ "%.0f"|format(j.total_cost) }}</td>
+        <td style="font-weight:700;color:{{ 'var(--success)' if j.profit >= 0 else 'var(--danger)' }}">
+          ${{ "%.0f"|format(j.profit) }}
+        </td>
+        <td>
+          <span style="display:inline-block;padding:.15rem .5rem;border-radius:99px;font-size:.78rem;font-weight:700;
+            background:{{ '#dcfce7' if margin >= 30 else ('#fef9c3' if margin >= 10 else '#fee2e2') }};
+            color:{{ '#15803d' if margin >= 30 else ('#92400e' if margin >= 10 else '#dc2626') }}">
+            {{ "%.1f"|format(margin) }}%
+          </span>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr style="background:var(--bg2);font-weight:700">
+        <td colspan="2">{{ t('Totals') }}</td>
+        <td>${{ "%.0f"|format(summary.total_revenue) }}</td>
+        <td class="hide-mobile">${{ "%.0f"|format(summary.total_materials) }}</td>
+        <td class="hide-mobile">${{ "%.0f"|format(summary.total_labor) }}</td>
+        <td class="hide-mobile">${{ "%.0f"|format(summary.total_other) }}</td>
+        <td>${{ "%.0f"|format(summary.total_costs) }}</td>
+        <td style="color:{{ 'var(--success)' if summary.gross_profit >= 0 else 'var(--danger)' }}">${{ "%.0f"|format(summary.gross_profit) }}</td>
+        <td>{{ "%.1f"|format(summary.avg_margin) }}%</td>
+      </tr>
+    </tfoot>
+  </table>
+  </div>
+  {% else %}
+  <div style="padding:2.5rem;text-align:center;color:var(--text3)">
+    {{ t('No completed jobs with paid invoices yet.') }}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

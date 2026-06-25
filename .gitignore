@@ -1,0 +1,26 @@
+# Database (contains SMTP passwords & contact data)
+*.db
+*.db-shm
+*.db-wal
+
+# Uploads
+uploads/
+
+# Backups
+backups/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Claude session data
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db

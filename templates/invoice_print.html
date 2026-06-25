@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ inv.invoice_number }} — {{ t('INVOICE') }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, Arial, sans-serif; font-size: 13px; color: #1a1a2e; background: #fff; }
+    .page { max-width: 780px; margin: 0 auto; padding: 2.5rem 2rem; }
+    h1 { font-size: 2rem; color: #4f46e5; }
+    h2 { font-size: .9rem; font-weight: 700; color: #374151; margin-bottom: .3rem; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
+    .company-name { font-size: 1.4rem; font-weight: 800; }
+    .company-info { color: #6b7280; font-size: .85rem; line-height: 1.7; margin-top: .25rem; }
+    .badge { display:inline-block; padding: .2rem .7rem; border-radius: 99px; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+    .badge-paid    { background:#dcfce7; color:#15803d; }
+    .badge-partial { background:#fef9c3; color:#854d0e; }
+    .badge-overdue { background:#fee2e2; color:#dc2626; }
+    .badge-sent    { background:#ede9fe; color:#4f46e5; }
+    .badge-draft   { background:#f3f4f6; color:#6b7280; }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; padding: 1.25rem; background: #f9fafb; border-radius: 8px; }
+    .meta-label { color: #6b7280; font-size: .75rem; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .2rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    thead th { background: #4f46e5; color: #fff; padding: .6rem .75rem; text-align: left; font-size: .82rem; }
+    thead th:not(:first-child) { text-align: right; }
+    tbody td { padding: .55rem .75rem; border-bottom: 1px solid #e5e7eb; }
+    tbody td:not(:first-child) { text-align: right; }
+    tbody tr:nth-child(even) td { background: #f9fafb; }
+    .totals-wrap { display: flex; justify-content: flex-end; }
+    .totals-table { width: 300px; }
+    .totals-table td { padding: .3rem 0; }
+    .totals-table .grand-total td { border-top: 2px solid #4f46e5; padding-top: .6rem; font-size: 1.1rem; font-weight: 700; color: #4f46e5; }
+    .totals-table .balance-due td { font-size: 1.05rem; font-weight: 700; }
+    .payment-history { margin-top: 1.5rem; }
+    .notes-box { margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; }
+    .terms { margin-top: 1rem; color: #6b7280; font-size: .8rem; line-height: 1.6; }
+    .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: .75rem; text-align: center; }
+    .balance-banner { background: #4f46e5; color: #fff; padding: .75rem 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: flex; justify-content: space-between; font-size: 1rem; font-weight: 700; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="no-print" style="margin-bottom:1rem;text-align:right">
+    <button onclick="window.print()"
+            style="background:#4f46e5;color:#fff;border:none;padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.9rem">
+      🖨 {{ t('Print / Save as PDF') }}
+    </button>
+    <button onclick="window.close()"
+            style="background:#f3f4f6;color:#374151;border:1px solid #d1d5db;padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:.9rem;margin-left:.5rem">
+      {{ t('Close') }}
+    </button>
+  </div>
+
+  <!-- header -->
+  <div class="header">
+    <div>
+      <div class="company-name">{{ co.name or t('Your Company Name') }}</div>
+      <div class="company-info">
+        {% if co.address %}{{ co.address }}<br>{% endif %}
+        {% if co.city %}{{ co.city }}{{ ', '+co.state if co.state else '' }} {{ co.zip or '' }}<br>{% endif %}
+        {% if co.phone %}{{ co.phone }}<br>{% endif %}
+        {% if co.email %}{{ co.email }}{% endif %}
+      </div>
+    </div>
+    <div style="text-align:right">
+      <h1>{{ t('INVOICE') }}</h1>
+      <div style="font-size:1rem;font-weight:700;margin-top:.3rem">{{ inv.invoice_number }}</div>
+      <div style="margin-top:.3rem"><span class="badge badge-{{ inv.status }}">{{ inv.status }}</span></div>
+    </div>
+  </div>
+
+  {% if totals.balance > 0 %}
+  <div class="balance-banner">
+    <span>{{ t('Balance Due') }}</span>
+    <span>${{ "%.2f"|format(totals.balance) }}{% if inv.due_date %} · Due {{ inv.due_date }}{% endif %}</span>
+  </div>
+  {% endif %}
+
+  <!-- meta -->
+  <div class="meta-grid">
+    <div>
+      <div class="meta-label">{{ t('Bill To') }}</div>
+      <strong>{{ inv.contact_name }}</strong>
+      {% if inv.contact_company %}<div>{{ inv.contact_company }}</div>{% endif %}
+      {% if inv.contact_address %}<div style="color:#6b7280">{{ inv.contact_address }}</div>{% endif %}
+      {% if inv.contact_email %}<div style="color:#6b7280">{{ inv.contact_email }}</div>{% endif %}
+      {% if inv.contact_phone %}<div style="color:#6b7280">{{ inv.contact_phone }}</div>{% endif %}
+    </div>
+    <div style="text-align:right">
+      <div style="margin-bottom:.4rem">
+        <div class="meta-label">{{ t('Invoice Date') }}</div>
+        <div>{{ inv.created_at[:10] }}</div>
+      </div>
+      {% if inv.due_date %}
+      <div style="margin-bottom:.4rem">
+        <div class="meta-label">{{ t('Due Date') }}</div>
+        <div>{{ inv.due_date }}</div>
+      </div>
+      {% endif %}
+      {% if inv.deposit_required %}
+      <div>
+        <div class="meta-label">{{ t('Deposit Required') }}</div>
+        <div>${{ "%.2f"|format(inv.deposit_required) }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- items -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width:45%">{{ t('Description') }}</th>
+        <th style="width:12%">{{ t('Qty') }}</th>
+        <th style="width:12%">{{ t('Unit') }}</th>
+        <th style="width:15%">{{ t('Unit Price') }}</th>
+        <th style="width:16%">{{ t('Amount') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+      <tr>
+        <td>{{ item.description }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ item.unit }}</td>
+        <td>${{ "%.2f"|format(item.unit_price) }}</td>
+        <td><strong>${{ "%.2f"|format(item.quantity * item.unit_price) }}</strong></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- totals -->
+  <div class="totals-wrap">
+    <table class="totals-table">
+      <tbody>
+        <tr><td style="color:#6b7280">{{ t('Subtotal') }}</td><td style="text-align:right">${{ "%.2f"|format(totals.subtotal) }}</td></tr>
+        {% if totals.discount %}
+        <tr><td style="color:#15803d">{{ t('Discount') }}</td><td style="text-align:right;color:#15803d">-${{ "%.2f"|format(totals.discount) }}</td></tr>
+        {% endif %}
+        {% if inv.tax_rate %}
+        <tr><td style="color:#6b7280">{{ t('Tax') }} ({{ inv.tax_rate }}%)</td><td style="text-align:right">${{ "%.2f"|format(totals.tax) }}</td></tr>
+        {% endif %}
+      </tbody>
+      <tbody>
+        <tr class="grand-total"><td>{{ t('Total') }}</td><td style="text-align:right">${{ "%.2f"|format(totals.total) }}</td></tr>
+        {% if totals.paid > 0 %}
+        <tr><td style="color:#15803d">{{ t('Paid') }}</td><td style="text-align:right;color:#15803d">-${{ "%.2f"|format(totals.paid) }}</td></tr>
+        <tr class="balance-due" style="color:{{ '#15803d' if totals.balance==0 else '#dc2626' }}">
+          <td>{{ t('Balance Due') }}</td><td style="text-align:right">${{ "%.2f"|format(totals.balance) }}</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- payment history -->
+  {% if payments %}
+  <div class="payment-history">
+    <h2 style="margin-bottom:.5rem">{{ t('Payments Received') }}</h2>
+    <table>
+      <thead><tr><th>{{ t('Date') }}</th><th>{{ t('Method') }}</th><th>{{ t('Reference') }}</th><th>{{ t('Amount') }}</th></tr></thead>
+      <tbody>
+      {% for p in payments %}
+        <tr>
+          <td>{{ p.paid_at[:10] }}</td>
+          <td style="text-transform:capitalize">{{ p.method.replace('_',' ') }}</td>
+          <td style="color:#6b7280">{{ p.reference or '—' }}</td>
+          <td style="color:#15803d;font-weight:600">${{ "%.2f"|format(p.amount) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if inv.notes %}
+  <div class="notes-box">
+    <h2>{{ t('Notes') }}</h2>
+    <p style="margin-top:.3rem;color:#374151;line-height:1.6">{{ inv.notes }}</p>
+  </div>
+  {% endif %}
+
+  {% if inv.terms %}
+  <div class="terms"><strong>{{ t('Terms:') }}</strong> {{ inv.terms }}</div>
+  {% endif %}
+
+  <div class="footer">
+    {{ t('Thank you for your business!') }} · {{ co.name or '' }} · {{ co.phone or '' }} · {{ co.email or '' }}
+  </div>
+</div>
+</body>
+</html>

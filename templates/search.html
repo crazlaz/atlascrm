@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Search') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Search results for') }} "{{ q }}"</h1>
+
+{% if not q %}
+<p style="color:#6b7280">{{ t('Enter a query in the search bar above.') }}</p>
+{% else %}
+
+<div class="card">
+  <h2>{{ t('Contacts') }} ({{ contacts|length }})</h2>
+  {% if contacts %}
+  <table>
+    <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Email') }}</th><th>{{ t('Company') }}</th></tr></thead>
+    <tbody>
+    {% for c in contacts %}
+      <tr>
+        <td><a href="/contacts/{{ c.id }}">{{ c.first_name }} {{ c.last_name }}</a></td>
+        <td>{{ c.email or '—' }}</td>
+        <td>{{ c.company or '—' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p style="color:#9ca3af;font-size:.9rem">{{ t('No contacts found.') }}</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>{{ t('Deals') }} ({{ deals|length }})</h2>
+  {% if deals %}
+  <table>
+    <thead><tr><th>{{ t('Title') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Stage') }}</th><th>{{ t('Value') }}</th></tr></thead>
+    <tbody>
+    {% for d in deals %}
+      <tr>
+        <td><a href="/deals/{{ d.id }}">{{ d.title }}</a></td>
+        <td>{{ d.contact_name }}</td>
+        <td><span class="badge badge-{{ d.stage }}">{{ d.stage }}</span></td>
+        <td>${{ "%.0f"|format(d.value) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p style="color:#9ca3af;font-size:.9rem">{{ t('No deals found.') }}</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>{{ t('Notes') }} ({{ notes|length }})</h2>
+  {% if notes %}
+  <table>
+    <thead><tr><th>{{ t('Note') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Date') }}</th></tr></thead>
+    <tbody>
+    {% for n in notes %}
+      <tr>
+        <td>{{ n.body[:80] }}{% if n.body|length > 80 %}…{% endif %}</td>
+        <td>{% if n.contact_id %}<a href="/contacts/{{ n.contact_id }}">{{ n.contact_name }}</a>{% else %}—{% endif %}</td>
+        <td style="color:#9ca3af;font-size:.8rem">{{ n.created_at[:10] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p style="color:#9ca3af;font-size:.9rem">{{ t('No notes found.') }}</p>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

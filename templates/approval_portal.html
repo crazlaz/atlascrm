@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ t('Review Your Estimate') }} — {{ est.estimate_number }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f4f6f9; color: #1a1a2e; }
+    .page { max-width: 680px; margin: 2rem auto; padding: 0 1rem 4rem; }
+    .header { background: #4f46e5; color: #fff; padding: 1.5rem; border-radius: 12px 12px 0 0; }
+    .header h1 { font-size: 1.3rem; margin: 0; }
+    .header p  { opacity: .8; font-size: .88rem; margin-top: .25rem; }
+    .card { background: #fff; border: 1px solid #e5e7eb; padding: 1.5rem; margin-bottom: 1rem; border-radius: 8px; }
+    .card:first-of-type { border-radius: 0 0 8px 8px; border-top: none; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th { text-align: left; padding: .5rem .6rem; background: #f9fafb; font-size: .75rem; text-transform: uppercase; color: #6b7280; letter-spacing: .4px; }
+    td { padding: .5rem .6rem; border-top: 1px solid #e5e7eb; }
+    td:not(:first-child) { text-align: right; }
+    .total-row td { font-weight: 700; font-size: 1.05rem; color: #4f46e5; border-top: 2px solid #4f46e5; padding-top: .65rem; }
+    .action-bar { display: flex; gap: .75rem; margin-top: 1.5rem; }
+    .btn-approve { flex: 1; background: #16a34a; color: #fff; border: none; padding: .75rem; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .btn-reject  { flex: 1; background: #fff; color: #dc2626; border: 2px solid #dc2626; padding: .75rem; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .btn-approve:hover { background: #15803d; }
+    .btn-reject:hover  { background: #fee2e2; }
+    input[type=text], textarea { width: 100%; padding: .55rem .75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; margin-top: .35rem; }
+    input[type=text]:focus, textarea:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+    label { font-size: .85rem; font-weight: 600; color: #374151; }
+    .badge { display:inline-block; padding:.2rem .6rem; border-radius:99px; font-size:.75rem; font-weight:700; background:#ede9fe; color:#4f46e5; }
+    @media(max-width:540px) { .action-bar { flex-direction: column; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>{{ co.name or t('Your Hardscaping Estimate') }}</h1>
+    <p>{{ t('Estimate') }} {{ est.estimate_number }} · {{ t('Prepared for') }} {{ est.contact_name }}</p>
+  </div>
+
+  <div class="card" style="border-top:1px solid #e5e7eb;border-radius:0 0 8px 8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem">
+      <div>
+        <span class="badge">{{ est.status }}</span>
+        <span style="color:#6b7280;font-size:.83rem;margin-left:.5rem">{{ t('Date') }}: {{ est.created_at[:10] }}</span>
+        {% if est.valid_until %}
+        <span style="color:#6b7280;font-size:.83rem;margin-left:.5rem">· {{ t('Valid until') }} {{ est.valid_until }}</span>
+        {% endif %}
+      </div>
+      {% if co.phone %}
+      <a href="tel:{{ co.phone }}" style="color:#4f46e5;font-size:.9rem;font-weight:600">📞 {{ co.phone }}</a>
+      {% endif %}
+    </div>
+
+    <table>
+      <thead>
+        <tr><th style="width:45%">{{ t('Description') }}</th><th>{{ t('Qty') }}</th><th>{{ t('Unit') }}</th><th>{{ t('Price') }}</th><th>{{ t('Amount') }}</th></tr>
+      </thead>
+      <tbody>
+      {% for item in items %}
+        <tr>
+          <td>{{ item.description }}</td>
+          <td>{{ item.quantity }}</td>
+          <td style="color:#9ca3af">{{ item.unit }}</td>
+          <td>${{ "%.2f"|format(item.unit_price) }}</td>
+          <td><strong>${{ "%.2f"|format(item.quantity * item.unit_price) }}</strong></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        {% if totals.discount %}
+        <tr><td colspan="4" style="text-align:right;color:#15803d">{{ t('Discount') }}</td><td style="text-align:right;color:#15803d">-${{ "%.2f"|format(totals.discount) }}</td></tr>
+        {% endif %}
+        {% if est.tax_rate %}
+        <tr><td colspan="4" style="text-align:right;color:#6b7280">{{ t('Tax') }} ({{ est.tax_rate }}%)</td><td style="text-align:right">${{ "%.2f"|format(totals.tax) }}</td></tr>
+        {% endif %}
+        <tr class="total-row"><td colspan="4" style="text-align:right">{{ t('Total') }}</td><td>${{ "%.2f"|format(totals.total) }}</td></tr>
+      </tfoot>
+    </table>
+
+    {% if est.notes %}
+    <div style="margin-top:1rem;padding:1rem;background:#f9fafb;border-radius:6px;font-size:.88rem;color:#374151">
+      <strong>{{ t('Notes') }}:</strong><br>{{ est.notes }}
+    </div>
+    {% endif %}
+
+    {% if est.terms %}
+    <p style="margin-top:.75rem;font-size:.8rem;color:#9ca3af">{{ t('Terms') }}: {{ est.terms }}</p>
+    {% endif %}
+
+    {% if est.status in ['draft','sent'] %}
+    <div id="approve-form" style="display:none;margin-top:1.5rem;border-top:2px solid #16a34a;padding-top:1.25rem">
+      <form method="post" action="/approve/{{ token }}/sign">
+        <input type="hidden" name="action" value="approve">
+        <label>{{ t('Type your full name to approve *') }}</label>
+        <input type="text" name="signer_name" placeholder="Jane Smith" required style="margin-bottom:.75rem">
+        <button class="btn-approve" type="submit">✓ {{ t('Approve This Estimate') }}</button>
+      </form>
+    </div>
+
+    <div id="reject-form" style="display:none;margin-top:1.5rem;border-top:2px solid #dc2626;padding-top:1.25rem">
+      <form method="post" action="/approve/{{ token }}/sign">
+        <input type="hidden" name="action" value="reject">
+        <label>{{ t('Let us know why (optional)') }}</label>
+        <textarea name="reason" rows="3" placeholder="{{ t('Price is too high, scope needs adjustment…') }}" style="margin-bottom:.75rem"></textarea>
+        <button class="btn-reject" type="submit">{{ t('Decline Estimate') }}</button>
+      </form>
+    </div>
+
+    <div class="action-bar" id="action-bar">
+      <button class="btn-approve" onclick="show('approve-form')">✓ {{ t('Approve & Sign') }}</button>
+      <button class="btn-reject"  onclick="show('reject-form')">✗ {{ t('Decline') }}</button>
+    </div>
+
+    {% elif est.status == 'approved' %}
+    <div style="margin-top:1.25rem;background:#dcfce7;color:#15803d;padding:1rem;border-radius:8px;font-weight:600;text-align:center">
+      ✓ {{ t('You approved this estimate') }}{% if est.signed_by %} ({{ t('signed by') }} {{ est.signed_by }}){% endif %}.
+    </div>
+    {% elif est.status == 'rejected' %}
+    <div style="margin-top:1.25rem;background:#fee2e2;color:#dc2626;padding:1rem;border-radius:8px;font-weight:600;text-align:center">
+      {{ t('This estimate was declined.') }}
+    </div>
+    {% endif %}
+  </div>
+
+  <p style="text-align:center;color:#9ca3af;font-size:.8rem;margin-top:1rem">
+    {{ co.name or '' }} · {{ co.phone or '' }} · {{ co.email or '' }}
+  </p>
+</div>
+<script>
+function show(id) {
+  document.getElementById('approve-form').style.display = 'none';
+  document.getElementById('reject-form').style.display  = 'none';
+  document.getElementById('action-bar').style.display   = 'none';
+  document.getElementById(id).style.display = 'block';
+}
+</script>
+</body>
+</html>

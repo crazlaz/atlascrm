@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ t('AI Assistant') }} — {{ contact.first_name }} {{ contact.last_name }}{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <div>
+    <h1 style="margin:0">🤖 {{ t('AI Assistant') }}</h1>
+    <p style="margin:.2rem 0 0;color:var(--text3);font-size:.88rem">
+      {{ t('Contact') }}: <a href="/contacts/{{ contact.id }}">{{ contact.first_name }} {{ contact.last_name }}</a>
+    </p>
+  </div>
+  <a href="/contacts/{{ contact.id }}" class="btn btn-ghost btn-sm">{{ t('← Back to Contact') }}</a>
+</div>
+
+<div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem" class="two-col">
+
+  <!-- actions panel -->
+  <div>
+    <div class="card">
+      <h2>{{ t('What would you like?') }}</h2>
+
+      <form method="post" style="margin-bottom:1rem">
+        <input type="hidden" name="action" value="summarize">
+        <p style="font-size:.85rem;color:var(--text2);margin-bottom:.5rem">
+          {{ t("Summarize this contact's last 30 days of activity.") }}
+        </p>
+        <button class="btn btn-primary btn-sm" type="submit" style="width:100%">
+          📋 {{ t('Summarize Activity') }}
+        </button>
+      </form>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">
+
+      <form method="post" style="margin-bottom:1rem">
+        <input type="hidden" name="action" value="draft_email">
+        <p style="font-size:.85rem;color:var(--text2);margin-bottom:.5rem">
+          {{ t('Draft a follow-up email based on their history.') }}
+        </p>
+        <label style="margin-top:0">{{ t('Extra instructions (optional)') }}</label>
+        <input type="text" name="instruction"
+               placeholder="{{ t('e.g. mention the proposal we sent') }}"
+               value="{{ instruction if action=='draft_email' else '' }}">
+        <button class="btn btn-primary btn-sm" type="submit" style="width:100%;margin-top:.5rem">
+          ✉ {{ t('Draft Follow-Up Email') }}
+        </button>
+      </form>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:.75rem 0">
+
+      <form method="post">
+        <input type="hidden" name="action" value="ask">
+        <p style="font-size:.85rem;color:var(--text2);margin-bottom:.5rem">
+          {{ t('Ask anything about this contact.') }}
+        </p>
+        <label style="margin-top:0">{{ t('Your question') }}</label>
+        <textarea name="instruction" rows="3"
+                  placeholder="{{ t('What should I focus on in our next call?') }}"
+                  required>{{ instruction if action=='ask' else '' }}</textarea>
+        <button class="btn btn-primary btn-sm" type="submit" style="width:100%;margin-top:.5rem">
+          💬 {{ t('Ask Claude') }}
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- result panel -->
+  <div>
+    {% if result %}
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <h2 style="margin:0">
+          {% if action == 'summarize' %}📋 {{ t('Activity Summary') }}
+          {% elif action == 'draft_email' %}✉ {{ t('Drafted Email') }}
+          {% else %}💬 {{ t('Answer') }}
+          {% endif %}
+        </h2>
+        {% if action == 'draft_email' %}
+        <button class="btn btn-ghost btn-sm" onclick="copyResult()">{{ t('Copy') }}</button>
+        {% endif %}
+      </div>
+      <pre id="ai-result" style="white-space:pre-wrap;font-size:.9rem;line-height:1.6;margin:0;
+                font-family:inherit;background:var(--surface2);padding:1rem;border-radius:8px">{{ result }}</pre>
+      {% if action == 'draft_email' %}
+      <div class="form-actions" style="margin-top:1rem">
+        <a href="/contacts/{{ contact.id }}"
+           onclick="
+             sessionStorage.setItem('prefill_subject','Follow-up');
+             sessionStorage.setItem('prefill_body', document.getElementById('ai-result').innerText);
+           "
+           class="btn btn-primary btn-sm">{{ t('Use in Email Compose →') }}</a>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align:center;padding:3rem;color:var(--text3)">
+      <div style="font-size:2.5rem;margin-bottom:.75rem">🤖</div>
+      <p>{{ t('Choose an action from the left to get started.') }}<br>
+      {{ t('Claude will analyze') }} {{ contact.first_name }}{{ t("'s full history to help you.") }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyResult() {
+  const text = document.getElementById('ai-result').innerText;
+  navigator.clipboard.writeText(text).then(() => alert('{{ t('Copied to clipboard!') }}'));
+}
+</script>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}{{ inv.invoice_number }} — {{ t('Invoice') }}{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <div>
+    <h1 style="margin:0">{{ inv.invoice_number }}</h1>
+    <div style="margin-top:.3rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+      <span class="badge badge-{{ inv.status }}">{{ inv.status }}</span>
+      <a href="/contacts/{{ inv.contact_id }}" style="font-size:.85rem">{{ inv.contact_name }}</a>
+      {% if inv.due_date %}
+        <span style="color:var(--text3);font-size:.82rem">· {{ t('Due') }} {{ inv.due_date }}</span>
+      {% endif %}
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <a href="/invoices/{{ inv.id }}/print" target="_blank" class="btn btn-primary btn-sm">🖨 {{ t('Print / PDF') }}</a>
+    <a href="/invoices" class="btn btn-ghost btn-sm">← {{ t('Invoices') }}</a>
+  </div>
+</div>
+
+{% if totals.balance > 0 %}
+<div style="background:{{ 'var(--danger)' if inv.status=='overdue' else '#f59e0b' }};color:#fff;
+            padding:.75rem 1.25rem;border-radius:8px;margin-bottom:1.25rem;
+            display:flex;justify-content:space-between;align-items:center">
+  <span><strong>{{ t('Balance Due') }}: ${{ "%.2f"|format(totals.balance) }}</strong>
+    {% if inv.status=='overdue' %} — {{ t('OVERDUE') }}{% endif %}
+  </span>
+  <button class="btn btn-sm" style="background:#fff;color:#1a1a2e"
+          onclick="openModal('payment-modal')">+ {{ t('Record Payment') }}</button>
+</div>
+{% elif totals.total > 0 %}
+<div style="background:var(--success);color:#fff;padding:.75rem 1.25rem;border-radius:8px;margin-bottom:1.25rem">
+  ✓ {{ t('Paid in full') }} — ${{ "%.2f"|format(totals.total) }}
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem" class="two-col">
+
+  <div>
+    <div class="card" style="padding:0">
+      <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0">{{ t('Line Items') }}</h2>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('add-item-modal')">+ {{ t('Add Item') }}</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>{{ t('Description') }}</th><th style="text-align:right">{{ t('Qty') }}</th><th>{{ t('Unit') }}</th><th style="text-align:right">{{ t('Price') }}</th><th style="text-align:right">{{ t('Total') }}</th><th></th></tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+          <tr>
+            <td>{{ item.description }}</td>
+            <td style="text-align:right">{{ item.quantity }}</td>
+            <td style="color:var(--text3);font-size:.82rem">{{ item.unit }}</td>
+            <td style="text-align:right">${{ "%.2f"|format(item.unit_price) }}</td>
+            <td style="text-align:right;font-weight:600">${{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+            <td>
+              <form method="post" action="/invoices/{{ inv.id }}/items/{{ item.id }}/delete" style="margin:0">
+                <button style="background:none;border:none;color:var(--danger);cursor:pointer">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" style="color:var(--text3);padding:1.5rem;text-align:center">{{ t('No items yet.') }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <div style="padding:1rem 1.25rem;border-top:2px solid var(--border)">
+        <div style="max-width:280px;margin-left:auto;font-size:.9rem">
+          <div style="display:flex;justify-content:space-between;padding:.2rem 0">
+            <span style="color:var(--text2)">{{ t('Subtotal') }}</span><strong>${{ "%.2f"|format(totals.subtotal) }}</strong>
+          </div>
+          {% if totals.discount %}
+          <div style="display:flex;justify-content:space-between;padding:.2rem 0;color:var(--success)">
+            <span>{{ t('Discount') }}</span><strong>-${{ "%.2f"|format(totals.discount) }}</strong>
+          </div>
+          {% endif %}
+          {% if inv.tax_rate %}
+          <div style="display:flex;justify-content:space-between;padding:.2rem 0">
+            <span style="color:var(--text2)">{{ t('Tax') }} ({{ inv.tax_rate }}%)</span><strong>${{ "%.2f"|format(totals.tax) }}</strong>
+          </div>
+          {% endif %}
+          <div style="display:flex;justify-content:space-between;padding:.5rem 0;border-top:2px solid var(--border);margin-top:.3rem;font-size:1.05rem">
+            <strong>{{ t('Total') }}</strong><strong style="color:var(--accent)">${{ "%.2f"|format(totals.total) }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:.2rem 0;color:var(--success)">
+            <span>{{ t('Paid') }}</span><strong>${{ "%.2f"|format(totals.paid) }}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:.3rem 0;font-size:1rem;font-weight:700;color:{{ 'var(--success)' if totals.balance==0 else 'var(--danger)' }}">
+            <span>{{ t('Balance Due') }}</span><span>${{ "%.2f"|format(totals.balance) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if payments %}
+    <div class="card">
+      <h2>{{ t('Payment History') }}</h2>
+      <table>
+        <thead><tr><th>{{ t('Date') }}</th><th>{{ t('Method') }}</th><th>{{ t('Reference') }}</th><th style="text-align:right">{{ t('Amount') }}</th></tr></thead>
+        <tbody>
+        {% for p in payments %}
+          <tr>
+            <td style="font-size:.83rem">{{ p.paid_at[:10] }}</td>
+            <td style="font-size:.83rem;text-transform:capitalize">{{ p.method.replace('_',' ') }}</td>
+            <td style="color:var(--text3);font-size:.82rem">{{ p.reference or '—' }}</td>
+            <td style="text-align:right;font-weight:600;color:var(--success)">${{ "%.2f"|format(p.amount) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>{{ t('Add from Catalog') }}</h2>
+      <form method="post" action="/invoices/{{ inv.id }}/items" id="catalog-form">
+        <input type="hidden" name="catalog_id" id="cat-id">
+        <label style="margin-top:0">{{ t('Service') }}</label>
+        <select onchange="fillFromCatalog(this)" style="margin-bottom:.5rem">
+          <option value="">{{ t('— pick a service —') }}</option>
+          {% for cat, services in catalog.items() %}
+          <optgroup label="{{ cat }}">
+            {% for s in services %}
+            <option value="{{ s.id }}" data-desc="{{ s.name }}" data-unit="{{ s.unit }}" data-price="{{ s.unit_price }}">
+              {{ s.name }} — ${{ "%.2f"|format(s.unit_price) }}/{{ s.unit }}
+            </option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
+        <label>{{ t('Description') }}</label>
+        <input type="text" name="description" id="cat-desc" required>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+          <div><label>{{ t('Qty') }}</label><input type="number" name="quantity" id="cat-qty" value="1" step="0.5" min="0"></div>
+          <div><label>{{ t('Unit') }}</label><input type="text" name="unit" id="cat-unit" value="each"></div>
+        </div>
+        <label>{{ t('Unit Price ($)') }}</label>
+        <input type="number" name="unit_price" id="cat-price" step="0.01" min="0" value="0">
+        <button class="btn btn-primary btn-sm" type="submit" style="width:100%;margin-top:.5rem">{{ t('Add Item') }}</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Status') }}</h2>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        {% for s in ['draft','sent','partial','paid','overdue','void'] %}
+        <form method="post" action="/invoices/{{ inv.id }}/status" style="margin:0">
+          <input type="hidden" name="status" value="{{ s }}">
+          <button class="btn btn-sm" style="width:100%;justify-content:flex-start;
+            {{ 'background:var(--accent);color:#fff;' if inv.status==s else 'background:var(--surface2);color:var(--text);border:1px solid var(--border);' }}">
+            {{ '✓ ' if inv.status==s else '' }}{{ s.title() }}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn btn-primary btn-sm" style="width:100%" onclick="openModal('payment-modal')">
+        + {{ t('Record Payment') }}
+      </button>
+    </div>
+
+    <div class="card">
+      <form method="post" action="/invoices/{{ inv.id }}/delete"
+            onsubmit="return confirm('{{ t('Delete this invoice?') }}')">
+        <button class="btn btn-danger btn-sm" type="submit">{{ t('Delete Invoice') }}</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Record Payment') }}</h2>
+      <button class="modal-close" onclick="closeModal('payment-modal')">✕</button>
+    </div>
+    <form method="post" action="/invoices/{{ inv.id }}/payment">
+      <label>{{ t('Amount ($)') }}</label>
+      <input type="number" name="amount" step="0.01" min="0.01"
+             value="{{ "%.2f"|format(totals.balance) }}" required>
+      <label>{{ t('Payment Method') }}</label>
+      <select name="method">
+        <option value="check">{{ t('Check') }}</option>
+        <option value="cash">{{ t('Cash') }}</option>
+        <option value="card">{{ t('Card') }}</option>
+        <option value="zelle">Zelle</option>
+        <option value="venmo">Venmo</option>
+        <option value="bank_transfer">{{ t('Bank Transfer') }}</option>
+        <option value="other">{{ t('Other') }}</option>
+      </select>
+      <label>{{ t('Reference #') }} <span style="font-weight:400;color:var(--text3)">({{ t('check #, transaction ID, etc.') }})</span></label>
+      <input type="text" name="reference" placeholder="{{ t('Optional') }}">
+      <label>{{ t('Date Paid') }}</label>
+      <input type="date" name="paid_at">
+      <label>{{ t('Notes') }}</label>
+      <input type="text" name="notes" placeholder="{{ t('Optional') }}">
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Save Payment') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('payment-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="add-item-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Add Custom Line Item') }}</h2>
+      <button class="modal-close" onclick="closeModal('add-item-modal')">✕</button>
+    </div>
+    <form method="post" action="/invoices/{{ inv.id }}/items">
+      <label>{{ t('Description') }}</label>
+      <input type="text" name="description" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div><label>{{ t('Qty') }}</label><input type="number" name="quantity" value="1" step="0.5" min="0" required></div>
+        <div><label>{{ t('Unit') }}</label><input type="text" name="unit" value="each"></div>
+      </div>
+      <label>{{ t('Unit Price ($)') }}</label>
+      <input type="number" name="unit_price" step="0.01" min="0" value="0" required>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Add Item') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('add-item-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fillFromCatalog(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) return;
+  document.getElementById('cat-id').value    = opt.value;
+  document.getElementById('cat-desc').value  = opt.dataset.desc  || '';
+  document.getElementById('cat-unit').value  = opt.dataset.unit  || 'each';
+  document.getElementById('cat-price').value = opt.dataset.price || '0';
+}
+</script>
+{% endblock %}

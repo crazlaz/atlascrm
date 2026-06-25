@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ t('Link Invalid') }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f4f6f9;
+           display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .card { background: #fff; border-radius: 12px; padding: 2.5rem 2rem;
+            max-width: 400px; width: 100%; text-align: center;
+            border: 1px solid #e5e7eb; }
+    .icon { font-size: 3rem; margin-bottom: 1rem; }
+    p { color: #6b7280; margin-top: .5rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🔗</div>
+  <h1>{{ t('Link Not Found') }}</h1>
+  <p>{{ t('This approval link is invalid or has expired.') }}<br>
+  {{ t('Please contact us if you need a new one.') }}</p>
+</div>
+</body>
+</html>

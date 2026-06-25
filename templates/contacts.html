@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Contacts') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1 style="margin:0">{{ t('Contacts') }}</h1>
+  <div style="display:flex;gap:.5rem">
+    <a href="/contacts/merge" class="btn btn-ghost">{{ t('Merge') }}</a>
+    <a href="/contacts/new" class="btn btn-primary">{{ t('+ Add Contact') }}</a>
+  </div>
+</div>
+
+<div class="card" style="padding:1rem 1.5rem">
+  <form method="get" style="display:flex;gap:.5rem">
+    <input type="text" name="q" value="{{ q }}" placeholder="{{ t('Search name, email, company…') }}" style="flex:1">
+    <button class="btn btn-primary" type="submit">{{ t('Search') }}</button>
+    {% if q %}<a href="/contacts" class="btn btn-ghost">{{ t('Clear') }}</a>{% endif %}
+  </form>
+</div>
+
+<form method="post" action="/contacts/bulk">
+<div class="card" style="padding:0">
+  <div style="padding:.75rem 1rem;border-bottom:1px solid #eee;display:flex;gap:.5rem;align-items:center">
+    <span style="font-size:.85rem;color:#6b7280">{{ t('Bulk:') }}</span>
+    <select name="action" style="padding:.3rem .6rem;font-size:.85rem;border:1px solid #d1d5db;border-radius:6px">
+      <option value="">{{ t('— select action —') }}</option>
+      <option value="tag">{{ t('Add tag') }}</option>
+      <option value="delete">{{ t('Delete selected') }}</option>
+      <option value="export">{{ t('Export selected (CSV)') }}</option>
+    </select>
+    <input type="text" name="tag_value" placeholder="{{ t('Tag name (for tag action)') }}"
+           style="width:180px;padding:.3rem .6rem;font-size:.85rem">
+    <button class="btn btn-ghost btn-sm" type="submit">{{ t('Apply') }}</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:36px"><input type="checkbox" id="check-all" onclick="document.querySelectorAll('.row-check').forEach(c=>c.checked=this.checked)"></th>
+        <th>{{ t('Name') }}</th><th>{{ t('Email') }}</th><th>{{ t('Phone') }}</th><th>{{ t('Company') }}</th><th>{{ t('Added') }}</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for c in contacts %}
+      <tr>
+        <td><input type="checkbox" class="row-check" name="ids" value="{{ c.id }}"></td>
+        <td><a href="/contacts/{{ c.id }}">{{ c.first_name }} {{ c.last_name }}</a></td>
+        <td>{{ c.email or '—' }}</td>
+        <td>{{ c.phone or '—' }}</td>
+        <td>{{ c.company or '—' }}</td>
+        <td style="color:#9ca3af;font-size:.8rem">{{ c.created_at[:10] }}</td>
+        <td><a href="/contacts/{{ c.id }}/edit" class="btn btn-ghost btn-sm">{{ t('Edit') }}</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" style="color:#9ca3af;padding:1.5rem">{{ t('No contacts found.') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+</form>
+
+{% if total_pages > 1 %}
+<div style="display:flex;gap:.5rem;justify-content:center;margin-top:1rem">
+  {% for p in range(1, total_pages+1) %}
+    <a href="?q={{ q }}&page={{ p }}"
+       class="btn btn-sm {{ 'btn-primary' if p == page else 'btn-ghost' }}">{{ p }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

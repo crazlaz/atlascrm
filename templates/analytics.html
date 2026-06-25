@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Analytics') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Analytics') }}</h1>
+
+<div class="stat-row">
+  <div class="stat"><div class="label">{{ t('Total Deals') }}</div><div class="value">{{ d.total_deals }}</div></div>
+  <div class="stat"><div class="label">{{ t('Win Rate') }}</div><div class="value">{{ d.win_rate }}%</div></div>
+  <div class="stat"><div class="label">{{ t('Avg Won Deal') }}</div><div class="value">${{ "%.0f"|format(d.avg_deal_size) }}</div></div>
+  <div class="stat">
+    <div class="label">{{ t('Avg Deal Velocity') }}</div>
+    <div class="value">{{ d.velocity_days ~ ' ' ~ t('days') if d.velocity_days else "—" }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+  <div class="card">
+    <h2>{{ t('Stage Funnel') }}</h2>
+    {% set stage_order = ['lead','qualified','proposal','won','lost'] %}
+    {% set funnel_map = {} %}
+    {% for r in d.funnel %}{% set _ = funnel_map.update({r.stage: r}) %}{% endfor %}
+    <table>
+      <thead><tr><th>{{ t('Stage') }}</th><th>{{ t('Deals') }}</th><th>{{ t('Value') }}</th></tr></thead>
+      <tbody>
+      {% for s in stage_order %}
+        {% set r = funnel_map.get(s) %}
+        <tr>
+          <td><span class="badge badge-{{ s }}">{{ s }}</span></td>
+          <td>{{ r.count if r else 0 }}</td>
+          <td>${{ "%.0f"|format(r.value if r and r.value else 0) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>{{ t('Top Companies by Pipeline') }}</h2>
+    {% if d.top_companies %}
+    <table>
+      <thead><tr><th>{{ t('Company') }}</th><th>{{ t('Deals') }}</th><th>{{ t('Pipeline') }}</th></tr></thead>
+      <tbody>
+      {% for c in d.top_companies %}
+        <tr>
+          <td>{{ c.company }}</td>
+          <td>{{ c.deals }}</td>
+          <td>${{ "%.0f"|format(c.pipeline) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="color:#9ca3af;font-size:.9rem">{{ t('No data yet.') }}</p>
+    {% endif %}
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h2>{{ t('Monthly Won Revenue') }}</h2>
+    {% if d.monthly %}
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>{{ t('Month') }}</th><th>{{ t('Deals Won') }}</th><th>{{ t('Revenue') }}</th><th style="width:40%">{{ t('Bar') }}</th></tr></thead>
+          <tbody>
+          {% set max_rev = d.monthly | map(attribute='revenue') | max %}
+          {% for m in d.monthly %}
+            <tr>
+              <td>{{ m.month }}</td>
+              <td>{{ m.deals }}</td>
+              <td>${{ "%.0f"|format(m.revenue) }}</td>
+              <td>
+                <div style="background:#4f46e5;height:16px;border-radius:4px;
+                            width:{{ (m.revenue / max_rev * 100)|int }}%;min-width:4px"></div>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color:#9ca3af;font-size:.9rem">{{ t('No won deals yet.') }}</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="card">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+    <h2 style="margin:0">{{ t('Contact Scores') }}</h2>
+    <div style="display:flex;gap:.5rem">
+      <a href="/export/contacts" class="btn btn-ghost btn-sm">{{ t('Export Contacts CSV') }}</a>
+      <a href="/export/deals"    class="btn btn-ghost btn-sm">{{ t('Export Deals CSV') }}</a>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>{{ t('Contact') }}</th><th>{{ t('Company') }}</th><th>{{ t('Deals') }}</th><th>{{ t('Won') }}</th><th>{{ t('Activities') }}</th><th>{{ t('Deal Value') }}</th><th>{{ t('Score') }}</th></tr>
+    </thead>
+    <tbody>
+    {% for c in scores %}
+      <tr>
+        <td><a href="/contacts/{{ c.id }}">{{ c.first_name }} {{ c.last_name }}</a></td>
+        <td>{{ c.company or '—' }}</td>
+        <td>{{ c.deal_count }}</td>
+        <td>{{ c.won_count }}</td>
+        <td>{{ c.activity_count }}</td>
+        <td>${{ "%.0f"|format(c.deal_value) }}</td>
+        <td>
+          <span style="font-weight:700;color:#4f46e5">{{ "%.1f"|format(c.score) }}</span>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" style="color:#9ca3af">{{ t('No contacts yet.') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ t('New Estimate') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1>{{ t('New Estimate') }}</h1>
+  <a href="/estimates" class="btn btn-ghost btn-sm">← {{ t('Estimates') }}</a>
+</div>
+
+<div class="card" style="max-width:640px">
+  <form method="post">
+    <label>{{ t('Client *') }}</label>
+    <select name="contact_id" required>
+      <option value="">{{ t('— select client —') }}</option>
+      {% for c in contacts %}
+        <option value="{{ c.id }}" {{ 'selected' if preselect_contact==c.id|string }}>
+          {{ c.first_name }} {{ c.last_name }}{% if c.company %} ({{ c.company }}){% endif %}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label>{{ t('Linked Job') }} <span style="font-weight:400;color:var(--text3)">({{ t('optional') }})</span></label>
+    <input type="number" name="job_id" value="{{ preselect_job or '' }}" placeholder="{{ t('Job ID') }}">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem">
+      <div>
+        <label>{{ t('Valid Until') }}</label>
+        <input type="date" name="valid_until">
+      </div>
+      <div>
+        <label>{{ t('Tax Rate (%)') }}</label>
+        <input type="number" name="tax_rate" step="0.1" min="0"
+               value="{{ co.tax_rate or 0 }}">
+      </div>
+      <div>
+        <label>{{ t('Discount ($)') }}</label>
+        <input type="number" name="discount" step="0.01" min="0" value="0">
+      </div>
+    </div>
+
+    <label>{{ t('Notes') }} <span style="font-weight:400;color:var(--text3)">({{ t('shown on estimate') }})</span></label>
+    <textarea name="notes" rows="3" placeholder="{{ t('Scope of work, materials included, exclusions…') }}"></textarea>
+
+    <label>{{ t('Terms') }}</label>
+    <textarea name="terms" rows="2">{{ co.estimate_terms or '' }}</textarea>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('Create Estimate') }}</button>
+      <a href="/estimates" class="btn btn-ghost">{{ t('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

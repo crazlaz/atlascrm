@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Settings') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Settings') }}</h1>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem" class="two-col">
+
+  <!-- ── SMTP ── -->
+  <div class="card">
+    <h2>📧 {{ t('Email (SMTP)') }}</h2>
+    <p style="font-size:.83rem;color:var(--text2);margin-bottom:.5rem">
+      {{ t('Used to send emails from contact pages. Gmail: host=smtp.gmail.com, port=587, use App Password.') }}
+    </p>
+    <form method="post" action="/settings/smtp">
+      <label>{{ t('Host') }}</label>
+      <input type="text" name="host" value="{{ smtp.host or '' }}" placeholder="smtp.gmail.com">
+      <label>{{ t('Port') }}</label>
+      <input type="number" name="port" value="{{ smtp.port or 587 }}">
+      <label>{{ t('Username') }}</label>
+      <input type="text" name="username" value="{{ smtp.username or '' }}" placeholder="you@gmail.com">
+      <label>{{ t('Password / App Password') }}</label>
+      <input type="password" name="password" value="{{ smtp.password or '' }}">
+      <label>{{ t('From address') }}</label>
+      <input type="text" name="from_addr" value="{{ smtp.from_addr or '' }}" placeholder="you@gmail.com">
+      <label>{{ t('IMAP Host') }} <span style="font-weight:400;color:var(--text3)">({{ t('for reply sync — e.g. imap.gmail.com') }})</span></label>
+      <input type="text" name="imap_host" value="{{ smtp.imap_host or '' }}" placeholder="imap.gmail.com">
+      <label style="display:flex;align-items:center;gap:.5rem;margin-top:.75rem;cursor:pointer">
+        <input type="checkbox" name="use_tls" value="1" {{ 'checked' if smtp.use_tls else '' }}
+               style="width:auto;margin:0"> {{ t('Use STARTTLS') }}
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Save SMTP') }}</button>
+        <a href="/settings/smtp-test" class="btn btn-ghost">{{ t('Send Test Email') }}</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Email Templates ── -->
+  <div class="card">
+    <h2>✉ {{ t('Email Templates') }}</h2>
+    {% for tpl in email_templates %}
+    <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;
+                border-bottom:1px solid var(--border);font-size:.85rem">
+      <span style="flex:1;font-weight:600">{{ tpl.name }}</span>
+      <span style="color:var(--text3);font-size:.78rem;flex:2">{{ tpl.subject }}</span>
+      <form method="post" action="/settings/email-templates/{{ tpl.id }}/delete" style="margin:0">
+        <button class="btn btn-sm" style="background:none;color:var(--danger);border:none;cursor:pointer"
+                onclick="return confirm('{{ t('Delete template?') }}')">✕</button>
+      </form>
+    </div>
+    {% else %}
+      <p style="color:var(--text3);font-size:.85rem;margin-bottom:.75rem">{{ t('No templates yet.') }}</p>
+    {% endfor %}
+    <form method="post" action="/settings/email-templates" style="margin-top:.85rem">
+      <label>{{ t('Template Name') }}</label>
+      <input type="text" name="name" placeholder="{{ t('Follow-up #1') }}" required>
+      <label>{{ t('Subject') }}</label>
+      <input type="text" name="subject" placeholder="{{ t('Following up on our conversation') }}" required>
+      <label>{{ t('Body') }}</label>
+      <textarea name="body" rows="4"
+                placeholder="Hi {{ '{{first_name}}' }},&#10;&#10;{{ t('Following up…') }}"></textarea>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" type="submit">{{ t('Save Template') }}</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Custom Fields ── -->
+  <div class="card">
+    <h2>🗂 {{ t('Custom Fields') }}</h2>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      {% for entity in ['contact','deal'] %}
+      <div style="flex:1;min-width:180px">
+        <h2 style="font-size:.85rem;color:var(--text2);text-transform:uppercase;letter-spacing:.4px">
+          {{ entity }}s
+        </h2>
+        {% for f in custom_fields[entity] %}
+        <div style="display:flex;align-items:center;gap:.4rem;padding:.3rem 0;
+                    border-bottom:1px solid var(--border);font-size:.83rem">
+          <span style="flex:1">{{ f.label }}</span>
+          <span class="badge" style="background:var(--surface2);color:var(--text2)">{{ f.field_type }}</span>
+          <form method="post" action="/settings/custom-fields/{{ f.id }}/delete" style="margin:0">
+            <button style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:.85rem"
+                    onclick="return confirm('{{ t('Delete field?') }}')">✕</button>
+          </form>
+        </div>
+        {% else %}
+          <p style="color:var(--text3);font-size:.82rem">{{ t('None yet.') }}</p>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <form method="post" action="/settings/custom-fields" style="margin-top:1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem">
+        <div>
+          <label>{{ t('Entity') }}</label>
+          <select name="entity">
+            <option value="contact">{{ t('Contact') }}</option>
+            <option value="deal">{{ t('Deal') }}</option>
+          </select>
+        </div>
+        <div>
+          <label>{{ t('Label') }}</label>
+          <input type="text" name="label" placeholder="{{ t('Lead Source') }}" required>
+        </div>
+        <div>
+          <label>{{ t('Type') }}</label>
+          <select name="field_type">
+            <option value="text">{{ t('Text') }}</option>
+            <option value="number">{{ t('Number') }}</option>
+            <option value="date">{{ t('Date') }}</option>
+            <option value="boolean">{{ t('Yes/No') }}</option>
+            <option value="select">{{ t('Dropdown') }}</option>
+          </select>
+        </div>
+      </div>
+      <label>{{ t('Options') }} <span style="font-weight:400;color:var(--text3)">({{ t('for dropdown, comma-separated') }})</span></label>
+      <input type="text" name="options" placeholder="{{ t('Option A, Option B, Option C') }}">
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" type="submit">{{ t('Add Field') }}</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Webhooks ── -->
+  <div class="card">
+    <h2>🔗 {{ t('Webhooks') }}</h2>
+    <p style="font-size:.83rem;color:var(--text2);margin-bottom:.75rem">
+      {{ t('POST JSON to a URL when an event fires. Good for Slack, Zapier, n8n.') }}
+    </p>
+    {% for w in webhooks %}
+    <div style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;
+                border-bottom:1px solid var(--border);font-size:.83rem;flex-wrap:wrap">
+      <span class="badge {{ 'badge-won' if w.active else 'badge-lost' }}">
+        {{ t('On') if w.active else t('Off') }}
+      </span>
+      <span style="flex:1;word-break:break-all">{{ w.url }}</span>
+      <span style="color:var(--text3);font-size:.78rem">{{ w.event }}</span>
+      <form method="post" action="/settings/webhooks/{{ w.id }}/toggle" style="margin:0">
+        <button class="btn btn-ghost btn-sm" type="submit">{{ t('Toggle') }}</button>
+      </form>
+      <form method="post" action="/settings/webhooks/{{ w.id }}/delete" style="margin:0">
+        <button class="btn btn-sm btn-danger" type="submit"
+                onclick="return confirm('{{ t('Delete webhook?') }}')">✕</button>
+      </form>
+    </div>
+    {% else %}
+      <p style="color:var(--text3);font-size:.85rem;margin-bottom:.75rem">{{ t('No webhooks yet.') }}</p>
+    {% endfor %}
+    <form method="post" action="/settings/webhooks" style="margin-top:.85rem">
+      <label>{{ t('Event') }}</label>
+      <select name="event">
+        <option value="deal_won">deal_won</option>
+        <option value="stage_change">stage_change</option>
+        <option value="contact_created">contact_created</option>
+      </select>
+      <label>{{ t('URL') }}</label>
+      <input type="text" name="url" placeholder="https://hooks.slack.com/…" required>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" type="submit">{{ t('Add Webhook') }}</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Backup ── -->
+  <div class="card">
+    <h2>💾 {{ t('Database Backup') }}</h2>
+    <p style="font-size:.83rem;color:var(--text2);margin-bottom:.85rem">
+      {{ t('Auto-backup runs daily in the background. Last 10 kept automatically.') }}
+    </p>
+    <form method="post" action="/settings/backup">
+      <button class="btn btn-primary" type="submit">{{ t('Create Backup Now') }}</button>
+    </form>
+    {% if backups %}
+    <table style="margin-top:1rem">
+      <thead><tr><th>{{ t('File') }}</th><th>{{ t('Size') }}</th><th></th></tr></thead>
+      <tbody>
+      {% for b in backups %}
+        <tr>
+          <td style="font-size:.82rem;font-family:monospace">{{ b.name }}</td>
+          <td style="color:var(--text3);font-size:.82rem">{{ b.size_kb }} KB</td>
+          <td><a href="/settings/backup/{{ b.name }}/download" class="btn btn-ghost btn-sm">⬇</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="color:var(--text3);font-size:.85rem;margin-top:.75rem">{{ t('No backups yet.') }}</p>
+    {% endif %}
+  </div>
+
+  <!-- ── Account ── -->
+  <div class="card">
+    <h2>👤 {{ t('Account') }}</h2>
+    <p style="font-size:.9rem">{{ t('Signed in as') }} <strong>{{ current_user.username }}</strong></p>
+    <form method="post" action="/settings/password" style="margin-top:.85rem">
+      <label>{{ t('Current Password') }}</label>
+      <input type="password" name="current_password" required>
+      <label>{{ t('New Password') }}</label>
+      <input type="password" name="new_password" required>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Update Password') }}</button>
+      </div>
+    </form>
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <h2 style="color:var(--danger)">{{ t('Danger Zone') }}</h2>
+      <form method="post" action="/settings/purge-activity" style="margin-top:.5rem"
+            onsubmit="return confirm('{{ t('Purge all activity older than 90 days?') }}')">
+        <button class="btn btn-danger btn-sm" type="submit">{{ t('Purge activity logs older than 90 days') }}</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Schedule') }} — {{ month_name }} {{ year }}{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <h1>{{ t('Schedule') }} — {{ month_name }} {{ year }}</h1>
+  <div style="display:flex;gap:.4rem">
+    {% set prev_month = month - 1 if month > 1 else 12 %}
+    {% set prev_year  = year if month > 1 else year - 1 %}
+    {% set next_month = month + 1 if month < 12 else 1 %}
+    {% set next_year  = year if month < 12 else year + 1 %}
+    <a href="/schedule?month={{ prev_month }}&year={{ prev_year }}" class="btn btn-ghost btn-sm">{{ t('← Prev') }}</a>
+    <a href="/schedule" class="btn btn-ghost btn-sm">{{ t('Today') }}</a>
+    <a href="/schedule?month={{ next_month }}&year={{ next_year }}" class="btn btn-ghost btn-sm">{{ t('Next →') }}</a>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden">
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--accent)">
+    {% for day in ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] %}
+    <div style="padding:.5rem;text-align:center;color:#fff;font-size:.78rem;font-weight:700;letter-spacing:.4px">
+      {{ t(day) }}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% for week in cal %}
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border)">
+    {% for day in week %}
+    {% if day == 0 %}
+      <div style="min-height:100px;background:var(--surface2);padding:.4rem"></div>
+    {% else %}
+      {% set date_str = '%s-%02d-%02d' % (year, month, day) %}
+      {% set jobs_today = by_date.get(date_str, []) %}
+      <div style="min-height:100px;padding:.4rem;border-left:1px solid var(--border);
+                  {{ 'background:var(--accent-lt);' if jobs_today else '' }}">
+        <div style="font-size:.8rem;font-weight:{% if jobs_today %}700{% else %}400{% endif %};
+                    color:{% if jobs_today %}var(--accent){% else %}var(--text3){% endif %};
+                    margin-bottom:.3rem">{{ day }}</div>
+        {% for s in jobs_today %}
+        <a href="/jobs/{{ s.job_id }}" style="text-decoration:none">
+          <div style="background:var(--accent);color:#fff;border-radius:4px;
+                      padding:.2rem .4rem;font-size:.72rem;margin-bottom:.2rem;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+               title="{{ s.title }} — {{ s.contact_name }}">
+            {{ s.title }}
+          </div>
+        </a>
+        {% if s.crew_notes %}
+        <div style="font-size:.68rem;color:var(--text3);padding:0 .2rem;
+                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ s.crew_notes }}
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+
+{% if by_date %}
+<div class="card" style="margin-top:1.25rem">
+  <h2>{{ t('Scheduled Jobs This Month') }}</h2>
+  <table style="margin-top:.75rem">
+    <thead><tr><th>{{ t('Date') }}</th><th>{{ t('Job') }}</th><th>{{ t('Client') }}</th><th>{{ t('Type') }}</th><th>{{ t('Crew Notes') }}</th></tr></thead>
+    <tbody>
+    {% for date, jobs in by_date.items()|sort %}
+      {% for s in jobs %}
+      <tr>
+        <td style="white-space:nowrap;font-weight:600">{{ date }}</td>
+        <td><a href="/jobs/{{ s.job_id }}">{{ s.title }}</a></td>
+        <td>{{ s.contact_name }}</td>
+        <td style="color:var(--text3);font-size:.82rem">{{ s.job_type.replace('_',' ').title() }}</td>
+        <td style="color:var(--text2);font-size:.82rem">{{ s.crew_notes or '—' }}</td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

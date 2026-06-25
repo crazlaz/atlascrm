@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ t('Sign in') }} — AtlasCRM</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0a0a0a; display: flex;
+           align-items: center; justify-content: center; min-height: 100vh; }
+    .card { background: #141414; border-radius: 12px; box-shadow: 0 2px 20px rgba(0,0,0,.6);
+            padding: 2.5rem; width: 100%; max-width: 380px; border: 1px solid #2e2e2e; }
+    h1 { font-size: 1.4rem; margin-bottom: 1.5rem; text-align: center; color: #f0f0f0; }
+    label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: .25rem;
+            margin-top: .85rem; color: #9ca3af; }
+    input { width: 100%; padding: .55rem .75rem; border: 1px solid #2e2e2e;
+            border-radius: 6px; font-size: .9rem; font-family: inherit;
+            background: #1e1e1e; color: #f0f0f0; }
+    button { margin-top: 1.25rem; width: 100%; padding: .6rem; background: #c9a227;
+             color: #0a0a0a; border: none; border-radius: 6px; font-size: .95rem;
+             cursor: pointer; font-family: inherit; font-weight: 700; }
+    button:hover { background: #a07d1a; }
+    .flash { padding: .7rem 1rem; border-radius: 6px; margin-bottom: 1rem;
+             font-size: .85rem; background: #450a0a; color: #fca5a5; }
+    .brand { text-align: center; font-size: 1.8rem; font-weight: 800;
+             color: #c9a227; margin-bottom: 1.5rem; letter-spacing: -1px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">AtlasCRM</div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    <h1>{{ t('Create admin account') if setup else t('Sign in') }}</h1>
+    <form method="post">
+      <label>{{ t('Username') }}</label>
+      <input type="text" name="username" required autofocus>
+      <label>{{ t('Password') }}</label>
+      <input type="password" name="password" required>
+      <button type="submit">{{ t('Create account & sign in') if setup else t('Sign in') }}</button>
+    </form>
+  </div>
+</body>
+</html>

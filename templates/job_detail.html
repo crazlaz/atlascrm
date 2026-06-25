@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} — crmpy{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <div>
+    <h1 style="margin:0">{{ job.title }}</h1>
+    <div style="margin-top:.3rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+      <span class="badge badge-{{ job.status }}">{{ statuses[job.status] }}</span>
+      <span style="color:var(--text2);font-size:.85rem">{{ job.job_type.replace('_',' ').title() }}</span>
+      <span style="color:var(--text3);font-size:.85rem">·</span>
+      <a href="/contacts/{{ job.contact_id }}" style="font-size:.85rem">{{ job.contact_name }}</a>
+    </div>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    {% if job.contact_phone %}
+      <a href="tel:{{ job.contact_phone }}" class="btn btn-success btn-sm">📞 {{ t('Call') }}</a>
+    {% endif %}
+    <a href="/estimates/new?job_id={{ job.id }}&contact_id={{ job.contact_id }}" class="btn btn-primary btn-sm">+ {{ t('Estimate') }}</a>
+    <a href="/invoices/new?job_id={{ job.id }}&contact_id={{ job.contact_id }}" class="btn btn-primary btn-sm">+ {{ t('Invoice') }}</a>
+    <a href="/jobs/{{ job.id }}/edit" class="btn btn-ghost btn-sm">{{ t('Edit') }}</a>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem" class="two-col">
+
+  <div>
+    <div class="card">
+      <h2>{{ t('Job Details') }}</h2>
+      <div style="font-size:.87rem;line-height:2">
+        {% if job.address %}
+        <div><span style="color:var(--text2)">{{ t('Address') }}</span><br>
+          {{ job.address }}<br>{{ job.city }}{{ ', '+job.state if job.state else '' }} {{ job.zip or '' }}
+        </div>
+        {% endif %}
+        {% if job.start_date %}
+        <div><span style="color:var(--text2)">{{ t('Start') }}</span><br>{{ job.start_date }}</div>
+        {% endif %}
+        {% if job.end_date %}
+        <div><span style="color:var(--text2)">{{ t('End') }}</span><br>{{ job.end_date }}</div>
+        {% endif %}
+        {% if job.description %}
+        <div style="margin-top:.5rem"><span style="color:var(--text2)">{{ t('Description') }}</span><br>
+          <span style="line-height:1.5">{{ job.description }}</span></div>
+        {% endif %}
+        {% if job.internal_notes %}
+        <div style="margin-top:.5rem;padding:.5rem;background:var(--surface2);border-radius:6px">
+          <span style="color:var(--text2);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px">{{ t('Internal Notes') }}</span><br>
+          <span style="line-height:1.5">{{ job.internal_notes }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Move Status') }}</h2>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        {% for s, label in statuses.items() %}
+        <form method="post" action="/jobs/{{ job.id }}/status" style="margin:0">
+          <input type="hidden" name="status" value="{{ s }}">
+          <button class="btn btn-sm" style="width:100%;justify-content:flex-start;
+            {{ 'background:var(--accent);color:#fff;' if job.status==s else 'background:var(--surface2);color:var(--text);border:1px solid var(--border);' }}">
+            {{ '✓ ' if job.status==s else '' }}{{ label }}
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Schedule Date') }}</h2>
+      <form method="post" action="/jobs/{{ job.id }}/schedule">
+        <input type="date" name="date" required>
+        <label>{{ t('Crew Notes') }}</label>
+        <input type="text" name="crew_notes" placeholder="{{ t('Who\'s going, what to bring…') }}">
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" type="submit">{{ t('Schedule') }}</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Job Costs') }}</h2>
+      {% if costs %}
+      <table style="font-size:.83rem;margin-bottom:.75rem">
+        <thead><tr><th>{{ t('Type') }}</th><th>{{ t('Vendor') }}</th><th style="text-align:right">{{ t('Amount') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for c in costs %}
+          <tr>
+            <td style="text-transform:capitalize">{{ c.cost_type }}</td>
+            <td style="color:var(--text2)">{{ c.vendor or '—' }}</td>
+            <td style="text-align:right">${{ "%.2f"|format(c.amount) }}</td>
+            <td>
+              <form method="post" action="/jobs/{{ job.id }}/costs/{{ c.id }}/delete" style="margin:0">
+                <button style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:.75rem">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      <form method="post" action="/jobs/{{ job.id }}/costs">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
+          <div>
+            <label style="margin-top:0">{{ t('Type') }}</label>
+            <select name="cost_type">
+              <option value="material">{{ t('Material') }}</option>
+              <option value="subcontractor">{{ t('Subcontractor') }}</option>
+              <option value="equipment">{{ t('Equipment') }}</option>
+              <option value="other">{{ t('Other') }}</option>
+            </select>
+          </div>
+          <div>
+            <label style="margin-top:0">{{ t('Amount ($)') }}</label>
+            <input type="number" name="amount" step="0.01" min="0" value="0" required>
+          </div>
+        </div>
+        <label>{{ t('Vendor / Note') }}</label>
+        <input type="text" name="vendor" placeholder="{{ t('Home Depot, ABC Subs…') }}">
+        <div class="form-actions">
+          <button class="btn btn-ghost btn-sm" type="submit">{{ t('Add Cost') }}</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <form method="post" action="/jobs/{{ job.id }}/delete"
+            onsubmit="return confirm('{{ t('Delete this job and all its data?') }}')">
+        <button class="btn btn-danger btn-sm" type="submit">{{ t('Delete Job') }}</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <h2 style="margin:0">{{ t('Estimates') }}</h2>
+        <a href="/estimates/new?job_id={{ job.id }}&contact_id={{ job.contact_id }}" class="btn btn-ghost btn-sm">+ {{ t('New') }}</a>
+      </div>
+      {% if estimates %}
+      <table>
+        <thead><tr><th>#</th><th>{{ t('Status') }}</th><th>{{ t('Valid Until') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for e in estimates %}
+          <tr>
+            <td><a href="/estimates/{{ e.id }}">{{ e.estimate_number }}</a></td>
+            <td><span class="badge">{{ e.status }}</span></td>
+            <td style="color:var(--text3);font-size:.82rem">{{ e.valid_until or '—' }}</td>
+            <td><a href="/estimates/{{ e.id }}/print" target="_blank" class="btn btn-ghost btn-sm">{{ t('Print') }}</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p style="color:var(--text3);font-size:.87rem">{{ t('No estimates yet.') }}</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <h2 style="margin:0">{{ t('Invoices') }}</h2>
+        <a href="/invoices/new?job_id={{ job.id }}&contact_id={{ job.contact_id }}" class="btn btn-ghost btn-sm">+ {{ t('New') }}</a>
+      </div>
+      {% if invoices %}
+      <table>
+        <thead><tr><th>#</th><th>{{ t('Status') }}</th><th>{{ t('Due') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for i in invoices %}
+          <tr>
+            <td><a href="/invoices/{{ i.id }}">{{ i.invoice_number }}</a></td>
+            <td><span class="badge badge-{{ i.status }}">{{ i.status }}</span></td>
+            <td style="color:var(--text3);font-size:.82rem">{{ i.due_date or '—' }}</td>
+            <td><a href="/invoices/{{ i.id }}/print" target="_blank" class="btn btn-ghost btn-sm">{{ t('Print') }}</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p style="color:var(--text3);font-size:.87rem">{{ t('No invoices yet.') }}</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h2>{{ t('Photos') }}</h2>
+      {% if photos %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem">
+        {% for p in photos %}
+        <div style="position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+          <a href="/jobs/photos/{{ p.id }}/view" target="_blank">
+            <img src="/jobs/photos/{{ p.id }}/view" alt="{{ p.caption or p.filename }}"
+                 style="width:100%;height:110px;object-fit:cover;display:block">
+          </a>
+          <div style="padding:.35rem .5rem;font-size:.75rem;background:var(--surface2)">
+            <span class="badge" style="font-size:.7rem">{{ p.photo_type }}</span>
+            {% if p.caption %}<div style="color:var(--text2);margin-top:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.caption }}</div>{% endif %}
+          </div>
+          <form method="post" action="/jobs/photos/{{ p.id }}/delete"
+                style="position:absolute;top:.25rem;right:.25rem;margin:0"
+                onsubmit="return confirm('{{ t('Delete photo?') }}')">
+            <button style="background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;
+                           width:22px;height:22px;cursor:pointer;font-size:.75rem;line-height:1">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p style="color:var(--text3);font-size:.87rem;margin-bottom:.75rem">{{ t('No photos yet.') }}</p>
+      {% endif %}
+      <form method="post" action="/jobs/{{ job.id }}/photos" enctype="multipart/form-data"
+            style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:2;min-width:160px">
+          <label style="margin-top:0">{{ t('Photo') }}</label>
+          <input type="file" name="photo" accept="image/*" required>
+        </div>
+        <div>
+          <label style="margin-top:0">{{ t('Type') }}</label>
+          <select name="photo_type">
+            <option value="before">{{ t('Before') }}</option>
+            <option value="progress" selected>{{ t('Progress') }}</option>
+            <option value="after">{{ t('After') }}</option>
+          </select>
+        </div>
+        <div style="flex:2;min-width:140px">
+          <label style="margin-top:0">{{ t('Caption') }}</label>
+          <input type="text" name="caption" placeholder="{{ t('Optional caption') }}">
+        </div>
+        <button class="btn btn-ghost btn-sm" type="submit" style="align-self:flex-end">{{ t('Upload') }}</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <h2 style="margin:0">{{ t('Crew') }}</h2>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('assign-crew-modal')">+ {{ t('Assign') }}</button>
+      </div>
+      {% if crew %}
+      <table style="font-size:.85rem;margin-bottom:.75rem">
+        <thead><tr><th>{{ t('Name') }}</th><th>{{ t('Role') }}</th><th style="text-align:right">{{ t('Hours') }}</th><th></th></tr></thead>
+        <tbody>
+        {% for m in crew %}
+          <tr>
+            <td><strong>{{ m.name }}</strong></td>
+            <td style="color:var(--text2)">{{ m.role or '—' }}</td>
+            <td style="text-align:right">{{ m.total_hours or 0 }}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-ghost btn-sm" onclick="openLogHours({{ m.member_id }}, '{{ m.name }}')">{{ t('Log') }}</button>
+              <form method="post" action="/jobs/{{ job.id }}/crew/{{ m.member_id }}/remove" style="display:inline"
+                    onsubmit="return confirm('{{ t('Remove from job?') }}')">
+                <button style="background:none;border:none;color:var(--danger);cursor:pointer">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <p style="color:var(--text3);font-size:.85rem;margin-bottom:.5rem">{{ t('No crew assigned yet.') }}</p>
+      {% endif %}
+    </div>
+
+    {% if job.status == 'completed' or job.status == 'paid' %}
+    <div class="card">
+      <h2>{{ t('Review Request') }}</h2>
+      <p style="font-size:.85rem;color:var(--text2);margin-bottom:.75rem">
+        {{ t('Send an automated email asking the client to leave a Google review.') }}
+      </p>
+      <form method="post" action="/jobs/{{ job.id }}/send-review">
+        <button class="btn btn-primary btn-sm" type="submit">⭐ {{ t('Send Review Request') }}</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <h2>{{ t('Activity') }}</h2>
+      {% if activity %}
+      <div class="timeline">
+        {% for a in activity[:15] %}
+        <div class="timeline-item">
+          <div class="tl-icon tl-{{ a.type }}">
+            {{ {'call':'📞','email':'✉','meeting':'🤝','task':'✅','note':'📝','stage_change':'→'}.get(a.type,'•') }}
+          </div>
+          <div class="tl-body"><strong style="font-size:.85rem">{{ a.summary }}</strong></div>
+          <div class="tl-time">{{ a.created_at[:16] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p style="color:var(--text3);font-size:.87rem">{{ t('No activity yet.') }}</p>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="assign-crew-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Assign Crew Member') }}</h2>
+      <button class="modal-close" onclick="closeModal('assign-crew-modal')">✕</button>
+    </div>
+    <form method="post" action="/jobs/{{ job.id }}/crew/assign">
+      <label>{{ t('Crew Member') }}</label>
+      <select name="member_id" required>
+        <option value="">{{ t('— select —') }}</option>
+        {% for m in all_crew %}
+          <option value="{{ m.id }}">{{ m.name }}{% if m.role %} ({{ m.role }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Assign') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('assign-crew-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="log-hours-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Log Hours') }} — <span id="log-hours-name"></span></h2>
+      <button class="modal-close" onclick="closeModal('log-hours-modal')">✕</button>
+    </div>
+    <form method="post" id="log-hours-form">
+      <input type="hidden" name="member_id" id="log-member-id">
+      <label>{{ t('Date') }}</label>
+      <input type="date" name="work_date" required>
+      <label>{{ t('Hours') }}</label>
+      <input type="number" name="hours" step="0.5" min="0.5" value="8" required>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Log Hours') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('log-hours-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openLogHours(memberId, name) {
+  document.getElementById('log-hours-name').textContent = name;
+  document.getElementById('log-member-id').value = memberId;
+  document.getElementById('log-hours-form').action = '/jobs/{{ job.id }}/hours';
+  openModal('log-hours-modal');
+}
+</script>
+{% endblock %}

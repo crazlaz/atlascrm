@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Edit Deal') if deal else t('New Deal') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Edit Deal') if deal else t('New Deal') }}</h1>
+<div class="card">
+  <form method="post">
+    <label>{{ t('Contact') }}</label>
+    <select name="contact_id" required>
+      <option value="">{{ t('— select —') }}</option>
+      {% for c in contacts %}
+        <option value="{{ c.id }}" {{ "selected" if deal and deal.contact_id == c.id else ("selected" if preselect == c.id|string) }}>
+          {{ c.first_name }} {{ c.last_name }}{% if c.company %} ({{ c.company }}){% endif %}
+        </option>
+      {% endfor %}
+    </select>
+    <label>{{ t('Title') }}</label>
+    <input type="text" name="title" value="{{ deal.title if deal else '' }}" required>
+    <label>{{ t('Value ($)') }}</label>
+    <input type="number" name="value" min="0" step="0.01" value="{{ deal.value if deal else '0' }}">
+    <label>{{ t('Stage') }}</label>
+    <select name="stage">
+      {% for s in ['lead','qualified','proposal','won','lost'] %}
+        <option value="{{ s }}" {{ "selected" if deal and deal.stage == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('Save') }}</button>
+      <a href="/deals" class="btn btn-ghost">{{ t('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

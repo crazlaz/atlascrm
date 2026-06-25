@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ seq.name }} — {{ t('Drip Sequence') }}{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <div>
+    <h1 style="margin:0">{{ seq.name }}</h1>
+    {% if seq.description %}
+    <p style="color:var(--text3);margin:.25rem 0 0;font-size:.88rem">{{ seq.description }}</p>
+    {% endif %}
+  </div>
+  <a href="/drip" class="btn btn-ghost btn-sm">{{ t('← All Sequences') }}</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem" class="two-col">
+
+  <!-- steps list -->
+  <div>
+    <div class="card">
+      <h2>{{ t('Steps') }}</h2>
+      {% if steps %}
+      <div class="timeline">
+        {% for step in steps %}
+        <div class="timeline-item" style="align-items:flex-start">
+          <div class="tl-icon" style="background:var(--accent);color:#fff;font-size:.8rem;min-width:2rem;text-align:center">
+            #{{ step.step_number }}
+          </div>
+          <div class="tl-body" style="flex:1">
+            <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+              <strong>{{ step.subject }}</strong>
+              <span class="badge" style="background:var(--surface2);color:var(--text2)">
+                {{ t('Wait') }} {{ step.delay_days }} {{ t('day') if step.delay_days == 1 else t('days') }}
+              </span>
+              <form method="post" action="/drip/{{ seq.id }}/steps/{{ step.id }}/delete"
+                    style="margin:0" onsubmit="return confirm('{{ t('Delete step?') }}')">
+                <button class="btn btn-sm" style="background:none;color:var(--danger);border:none;cursor:pointer;padding:0">✕</button>
+              </form>
+            </div>
+            <pre style="margin:.4rem 0 0;font-size:.82rem;white-space:pre-wrap;color:var(--text2);background:var(--surface2);padding:.5rem .75rem;border-radius:6px">{{ step.body }}</pre>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--text3);font-size:.87rem">{{ t('No steps yet. Add the first email below.') }}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- add step -->
+  <div>
+    <div class="card">
+      <h2>{{ t('Add Step') }}</h2>
+      <form method="post" action="/drip/{{ seq.id }}/steps">
+        <label>{{ t('Step #') }}</label>
+        <input type="number" name="step_number" value="{{ (steps|length + 1) }}" min="1" required>
+        <label>{{ t('Delay (days after previous step)') }}</label>
+        <input type="number" name="delay_days" value="3" min="0" required>
+        <label>{{ t('Subject') }}</label>
+        <input type="text" name="subject" placeholder="{{ t('Following up…') }}" required>
+        <label>{{ t('Body') }} <span style="font-weight:400;color:var(--text3)">— use {{ '{{first_name}}' }}, {{ '{{last_name}}' }}</span></label>
+        <textarea name="body" rows="6" placeholder="Hi {{ '{{first_name}}' }},&#10;&#10;{{ t('Following up…') }}" required></textarea>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" type="submit">{{ t('Add Step') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

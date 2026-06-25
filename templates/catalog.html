@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Service Catalog') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <h1>{{ t('Service Catalog') }}</h1>
+  <button class="btn btn-primary" onclick="openModal('new-service-modal')">{{ t('+ Add Service') }}</button>
+</div>
+
+<p style="color:var(--text3);font-size:.87rem;margin-bottom:1rem">
+  {{ t('These are your reusable line items — they appear in the catalog picker when building estimates and invoices.') }}
+</p>
+
+{% for category, items in by_category.items() %}
+<div class="card" style="margin-bottom:1rem">
+  <h2 style="margin-bottom:.75rem">{{ category }}</h2>
+  <table>
+    <thead>
+      <tr><th>{{ t('Service') }}</th><th>{{ t('Description') }}</th><th>{{ t('Unit') }}</th><th style="text-align:right">{{ t('Unit Price') }}</th><th>{{ t('Active') }}</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+      <tr style="{{ 'opacity:.45;' if not item.active else '' }}">
+        <td><strong>{{ item.name }}</strong></td>
+        <td style="color:var(--text3);font-size:.83rem">{{ item.description or '—' }}</td>
+        <td style="font-size:.83rem">{{ item.unit }}</td>
+        <td style="text-align:right;font-weight:600">${{ "%.2f"|format(item.unit_price) }}</td>
+        <td>
+          <span class="badge {{ 'badge-won' if item.active else '' }}"
+                style="{{ '' if item.active else 'background:var(--surface2);color:var(--text3)' }}">
+            {{ t('Yes') if item.active else t('No') }}
+          </span>
+        </td>
+        <td>
+          <form method="post" action="/settings/catalog/{{ item.id }}/delete" style="margin:0"
+                onsubmit="return confirm('{{ t('Delete this service?') }}')">
+            <button style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:.85rem">✕</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:2rem;color:var(--text3)">
+  {{ t('No services yet. Add your first one above.') }}
+</div>
+{% endfor %}
+
+<div class="modal-overlay" id="new-service-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Add Service') }}</h2>
+      <button class="modal-close" onclick="closeModal('new-service-modal')">✕</button>
+    </div>
+    <form method="post" action="/settings/catalog/new">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div>
+          <label>{{ t('Category') }}</label>
+          <input type="text" name="category" placeholder="{{ t('Pavers, Labor, Drainage…') }}" required>
+        </div>
+        <div>
+          <label>{{ t('Service Name') }}</label>
+          <input type="text" name="name" placeholder="{{ t('Paver installation') }}" required>
+        </div>
+      </div>
+      <label>{{ t('Description') }} <span style="font-weight:400;color:var(--text3)">({{ t('optional') }})</span></label>
+      <input type="text" name="description" placeholder="{{ t('Brief description') }}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div>
+          <label>{{ t('Unit') }}</label>
+          <input type="text" name="unit" placeholder="{{ t('sq ft, hour, each…') }}" required>
+        </div>
+        <div>
+          <label>{{ t('Unit Price ($)') }}</label>
+          <input type="number" name="unit_price" step="0.01" min="0" value="0" required>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Add Service') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('new-service-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

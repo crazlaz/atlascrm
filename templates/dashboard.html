@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Dashboard') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Dashboard') }}</h1>
+
+<div class="stat-row">
+  <div class="stat"><div class="label">{{ t('Contacts') }}</div><div class="value">{{ stats.contacts }}</div></div>
+  <div class="stat"><div class="label">{{ t('Open Deals') }}</div><div class="value">{{ stats.open_deals }}</div></div>
+  <div class="stat"><div class="label">{{ t('Pipeline Value') }}</div><div class="value">${{ "%.0f"|format(stats.pipeline_value) }}</div></div>
+  <div class="stat"><div class="label">{{ t('Won This Month') }}</div><div class="value">${{ "%.0f"|format(stats.won_value) }}</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+  <div class="card">
+    <h2>{{ t('Pipeline') }}</h2>
+    <table>
+      <thead><tr><th>{{ t('Stage') }}</th><th>{{ t('Deals') }}</th><th>{{ t('Value') }}</th></tr></thead>
+      <tbody>
+      {% for row in pipeline %}
+        <tr>
+          <td><span class="badge badge-{{ row.stage }}">{{ row.stage }}</span></td>
+          <td>{{ row.count }}</td>
+          <td>${{ "%.0f"|format(row.total_value or 0) }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3" style="color:#9ca3af">{{ t('No deals yet') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>{{ t('Upcoming Reminders') }}</h2>
+    <table>
+      <thead><tr><th>{{ t('Due') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Note') }}</th></tr></thead>
+      <tbody>
+      {% for r in reminders %}
+        <tr>
+          <td style="white-space:nowrap">{{ r.due_at[:10] }}</td>
+          <td>{{ r.contact_name or '—' }}</td>
+          <td>{{ r.body }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3" style="color:#9ca3af">{{ t('All clear') }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>{{ t('Recent Activity') }}</h2>
+  <table>
+    <thead><tr><th>{{ t('When') }}</th><th>{{ t('Type') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Summary') }}</th></tr></thead>
+    <tbody>
+    {% for a in activity %}
+      <tr>
+        <td style="white-space:nowrap;color:#6b7280;font-size:.8rem">{{ a.created_at[:16] }}</td>
+        <td><span class="badge" style="background:#f3f4f6;color:#374151">{{ a.type }}</span></td>
+        <td>{{ a.contact_name or '—' }}</td>
+        <td>{{ a.summary }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" style="color:#9ca3af">{{ t('No activity yet') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

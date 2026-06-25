@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Audit Log') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Audit Log') }}</h1>
+
+<div class="card" style="padding:.85rem 1.25rem;margin-bottom:1rem">
+  <form method="get" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:flex-end">
+    <div style="flex:1;min-width:140px">
+      <label style="margin-top:0">{{ t('Type') }}</label>
+      <select name="type">
+        <option value="">{{ t('All types') }}</option>
+        {% for atype in ['call','email','meeting','task','note','stage_change'] %}
+          <option {{ 'selected' if filter_type==atype }}>{{ atype }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex:1;min-width:140px">
+      <label style="margin-top:0">{{ t('Contact') }}</label>
+      <input type="text" name="contact" value="{{ filter_contact }}" placeholder="{{ t('Name') }}…">
+    </div>
+    <div style="flex:1;min-width:120px">
+      <label style="margin-top:0">{{ t('From') }}</label>
+      <input type="date" name="from" value="{{ filter_from }}">
+    </div>
+    <div style="flex:1;min-width:120px">
+      <label style="margin-top:0">To</label>
+      <input type="date" name="to" value="{{ filter_to }}">
+    </div>
+    <div style="display:flex;gap:.4rem;align-self:flex-end">
+      <button class="btn btn-primary btn-sm" type="submit">{{ t('Filter') }}</button>
+      <a href="/audit" class="btn btn-ghost btn-sm">{{ t('Clear') }}</a>
+    </div>
+  </form>
+</div>
+
+<div class="card" style="padding:0">
+  <table>
+    <thead>
+      <tr><th>{{ t('When') }}</th><th>{{ t('Type') }}</th><th>{{ t('Contact') }}</th><th>{{ t('Summary') }}</th></tr>
+    </thead>
+    <tbody>
+    {% for a in rows %}
+      <tr>
+        <td style="white-space:nowrap;color:var(--text3);font-size:.78rem">{{ a.created_at[:16] }}</td>
+        <td>
+          <span class="badge tl-{{ a.type }}"
+                style="background:var(--surface2);color:var(--text2)">
+            {{ {'call':'📞','email':'✉','meeting':'🤝','task':'✅','note':'📝','stage_change':'→'}.get(a.type,'•') }}
+            {{ a.type }}
+          </span>
+        </td>
+        <td>
+          {% if a.contact_id %}
+            <a href="/contacts/{{ a.contact_id }}">{{ a.contact_name or '—' }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td>{{ a.summary }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" style="color:var(--text3);padding:1.5rem">{{ t('No activity found.') }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if total_pages > 1 %}
+<div style="display:flex;gap:.5rem;justify-content:center;margin-top:1rem">
+  {% for p in range(1, total_pages+1) %}
+    <a href="?type={{ filter_type }}&contact={{ filter_contact }}&from={{ filter_from }}&to={{ filter_to }}&page={{ p }}"
+       class="btn btn-sm {{ 'btn-primary' if p==page else 'btn-ghost' }}">{{ p }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

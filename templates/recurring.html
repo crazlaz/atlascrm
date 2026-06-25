@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Recurring Contracts') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1>{{ t('Recurring Contracts') }}</h1>
+  <button class="btn btn-primary" onclick="openModal('new-contract-modal')">{{ t('+ New Contract') }}</button>
+</div>
+
+<p style="color:var(--text3);font-size:.87rem;margin-bottom:1.25rem">
+  {{ t('Contracts auto-generate invoices on schedule. The billing worker runs nightly.') }}
+</p>
+
+{% if contracts %}
+<div class="card" style="padding:0">
+  <table>
+    <thead>
+      <tr><th>{{ t('Contract') }}</th><th>{{ t('Client') }}</th><th>{{ t('Amount') }}</th><th>{{ t('Frequency') }}</th><th>{{ t('Next Bill') }}</th><th>{{ t('Status') }}</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for c in contracts %}
+      <tr>
+        <td><strong>{{ c.name }}</strong></td>
+        <td><a href="/contacts/{{ c.contact_id }}">{{ c.contact_name }}</a></td>
+        <td style="font-weight:600">${{ "%.2f"|format(c.amount) }}</td>
+        <td style="text-transform:capitalize;color:var(--text2)">{{ c.frequency }}</td>
+        <td style="color:var(--text2);font-size:.85rem">{{ c.next_date }}</td>
+        <td>
+          <span class="badge {{ 'badge-won' if c.active else 'badge-lost' }}">
+            {{ t('Active') if c.active else t('Paused') }}
+          </span>
+        </td>
+        <td style="white-space:nowrap">
+          {% if c.active %}
+          <form method="post" action="/recurring/{{ c.id }}/pause" style="display:inline">
+            <button class="btn btn-ghost btn-sm">{{ t('Pause') }}</button>
+          </form>
+          {% else %}
+          <form method="post" action="/recurring/{{ c.id }}/resume" style="display:inline">
+            <button class="btn btn-ghost btn-sm">{{ t('Resume') }}</button>
+          </form>
+          {% endif %}
+          <form method="post" action="/recurring/{{ c.id }}/delete" style="display:inline"
+                onsubmit="return confirm('{{ t('Delete this contract?') }}')">
+            <button class="btn btn-sm btn-danger">✕</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:2.5rem;color:var(--text3)">
+  <p>{{ t('No recurring contracts yet.') }}</p>
+  <p style="font-size:.85rem;margin-top:.5rem">{{ t('Great for monthly lawn care, seasonal maintenance, or any regular billing.') }}</p>
+</div>
+{% endif %}
+
+<div class="modal-overlay" id="new-contract-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('New Recurring Contract') }}</h2>
+      <button class="modal-close" onclick="closeModal('new-contract-modal')">✕</button>
+    </div>
+    <form method="post" action="/recurring/new">
+      <label>{{ t('Contract Name *') }}</label>
+      <input type="text" name="name" placeholder="{{ t('Monthly Lawn Maintenance') }}" required>
+      <label>{{ t('Client *') }}</label>
+      <select name="contact_id" required>
+        <option value="">{{ t('— select client —') }}</option>
+        {% for c in contacts %}
+          <option value="{{ c.id }}">{{ c.first_name }} {{ c.last_name }}{% if c.company %} ({{ c.company }}){% endif %}</option>
+        {% endfor %}
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div>
+          <label>{{ t('Amount ($)') }}</label>
+          <input type="number" name="amount" step="0.01" min="0" value="0" required>
+        </div>
+        <div>
+          <label>{{ t('Frequency') }}</label>
+          <select name="frequency">
+            <option value="weekly">{{ t('Weekly') }}</option>
+            <option value="biweekly">{{ t('Bi-weekly') }}</option>
+            <option value="monthly" selected>{{ t('Monthly') }}</option>
+            <option value="quarterly">{{ t('Quarterly') }}</option>
+            <option value="yearly">{{ t('Yearly') }}</option>
+          </select>
+        </div>
+      </div>
+      <label>{{ t('First Bill Date') }}</label>
+      <input type="date" name="next_date">
+      <label>{{ t('Notes') }}</label>
+      <input type="text" name="notes" placeholder="{{ t('Includes mowing, edging, blowing…') }}">
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Create Contract') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('new-contract-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

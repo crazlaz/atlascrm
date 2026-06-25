@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AtlasCRM{% endblock %}</title>
+  <style>
+    :root {
+      --bg:        #0a0a0a;
+      --surface:   #141414;
+      --surface2:  #1e1e1e;
+      --border:    #2e2e2e;
+      --text:      #f0f0f0;
+      --text2:     #9ca3af;
+      --text3:     #6b7280;
+      --accent:    #c9a227;
+      --accent-h:  #a07d1a;
+      --accent-lt: #2a2000;
+      --nav-bg:    #0a0a0a;
+      --nav-link:  #c9a227;
+      --danger:    #ef4444;
+      --success:   #2d6a4f;
+      --warn:      #d97706;
+      --shadow:    0 1px 6px rgba(0,0,0,.5);
+    }
+    [data-theme="dark"] {
+      --bg:        #0a0a0a;
+      --surface:   #141414;
+      --surface2:  #1e1e1e;
+      --border:    #2e2e2e;
+      --text:      #f0f0f0;
+      --text2:     #9ca3af;
+      --text3:     #6b7280;
+      --accent:    #c9a227;
+      --accent-h:  #a07d1a;
+      --accent-lt: #2a2000;
+      --nav-bg:    #0a0a0a;
+      --nav-link:  #c9a227;
+      --shadow:    0 1px 6px rgba(0,0,0,.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body  { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text);
+            transition: background .2s, color .2s; }
+    a     { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── nav ── */
+    nav {
+      background: var(--nav-bg);
+      padding: 0 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      height: 54px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    nav .brand { color: #fff; font-weight: 800; font-size: 1.05rem; letter-spacing: -.5px;
+                 white-space: nowrap; }
+    nav .nav-links { display: flex; gap: 1rem; align-items: center; }
+    nav .nav-links a { color: var(--nav-link); font-size: .85rem; white-space: nowrap; }
+    nav .nav-links a:hover { color: #fff; text-decoration: none; }
+    .search-wrap { flex: 1; max-width: 260px; margin-left: auto; }
+    .search-wrap form { display: flex; gap: .3rem; }
+    .search-wrap input {
+      flex: 1; padding: .32rem .65rem; border-radius: 6px; border: none;
+      background: rgba(255,255,255,.1); color: #fff; font-size: .84rem;
+      outline: none; min-width: 0;
+    }
+    .search-wrap input::placeholder { color: var(--nav-link); }
+    .search-wrap input:focus { background: rgba(255,255,255,.18); }
+    .search-wrap button { padding: .32rem .6rem; border-radius: 6px; border: none;
+                          background: var(--accent); color: #fff; font-size: .8rem;
+                          cursor: pointer; }
+    .nav-right { display: flex; align-items: center; gap: .75rem; flex-shrink: 0; }
+    .nav-right a { color: var(--nav-link); font-size: .85rem; white-space: nowrap; }
+    .nav-right a:hover { color: #fff; text-decoration: none; }
+    .theme-btn { background: none; border: none; cursor: pointer; font-size: 1.1rem;
+                 color: var(--nav-link); padding: 0; line-height: 1; }
+
+    /* hamburger */
+    .hamburger { display: none; background: none; border: none; cursor: pointer;
+                 color: var(--nav-link); font-size: 1.4rem; padding: 0; }
+    .mobile-menu { display: none; flex-direction: column; gap: .5rem;
+                   background: var(--nav-bg); padding: .75rem 1.25rem; }
+    .mobile-menu.open { display: flex; }
+    .mobile-menu a { color: var(--nav-link); font-size: .9rem; padding: .35rem 0;
+                     border-bottom: 1px solid rgba(255,255,255,.05); }
+
+    /* ── layout ── */
+    .container { max-width: 1040px; margin: 1.75rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.45rem; margin-bottom: 1.25rem; }
+    h2 { font-size: 1.1rem; margin-bottom: .65rem; }
+
+    /* ── cards ── */
+    .card { background: var(--surface); border-radius: 10px;
+            box-shadow: var(--shadow); padding: 1.4rem; margin-bottom: 1.4rem;
+            border: 1px solid var(--border); }
+
+    /* ── tables ── */
+    table  { width: 100%; border-collapse: collapse; font-size: .88rem; }
+    th     { text-align: left; padding: .5rem .7rem; background: var(--surface2);
+             font-size: .75rem; text-transform: uppercase; letter-spacing: .4px;
+             color: var(--text2); }
+    td     { padding: .52rem .7rem; border-top: 1px solid var(--border); }
+    tr:hover td { background: var(--surface2); }
+
+    /* ── buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .42rem 1rem; border-radius: 6px; font-size: .84rem;
+      cursor: pointer; border: none; font-family: inherit;
+      transition: background .15s, opacity .15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-h); text-decoration: none; color: #fff; }
+    .btn-sm { padding: .28rem .6rem; font-size: .78rem; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { opacity: .85; text-decoration: none; color: #fff; }
+    .btn-ghost { background: transparent; color: var(--accent);
+                 border: 1px solid var(--accent); }
+    .btn-ghost:hover { background: var(--accent-lt); text-decoration: none; }
+    .btn-success { background: #16a34a; color: #fff; }
+    .btn-success:hover { opacity: .85; text-decoration: none; color: #fff; }
+    .btn-warn { background: #f59e0b; color: #fff; }
+
+    /* ── badges ── */
+    .badge { display: inline-block; padding: .18rem .52rem; border-radius: 999px;
+             font-size: .72rem; font-weight: 600; }
+    .badge-lead       { background: #dbeafe; color: #1d4ed8; }
+    .badge-qualified  { background: #fef9c3; color: #854d0e; }
+    .badge-proposal   { background: var(--accent-lt); color: var(--accent); }
+    .badge-won        { background: #dcfce7; color: #15803d; }
+    .badge-lost       { background: #fee2e2; color: #b91c1c; }
+    [data-theme="dark"] .badge-lead      { background: #1e3a5f; color: #93c5fd; }
+    [data-theme="dark"] .badge-qualified { background: #3b2f00; color: #fde68a; }
+    [data-theme="dark"] .badge-won       { background: #052e16; color: #86efac; }
+    [data-theme="dark"] .badge-lost      { background: #450a0a; color: #fca5a5; }
+
+    /* ── forms ── */
+    form label { display: block; font-size: .82rem; font-weight: 600;
+                 margin-bottom: .22rem; margin-top: .8rem; color: var(--text2); }
+    form input[type=text], form input[type=email], form input[type=number],
+    form input[type=password], form input[type=datetime-local], form input[type=date],
+    form select, form textarea {
+      width: 100%; padding: .48rem .72rem;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: .88rem; font-family: inherit;
+      background: var(--surface); color: var(--text);
+      transition: border-color .15s;
+    }
+    form input:focus, form select:focus, form textarea:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,70,229,.12);
+    }
+    form textarea { resize: vertical; min-height: 72px; }
+    .form-actions { margin-top: 1.1rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+
+    /* ── flash ── */
+    .flash { padding: .72rem 1rem; border-radius: 6px; margin-bottom: .85rem;
+             font-size: .88rem; }
+    .flash-success { background: #dcfce7; color: #15803d; }
+    .flash-error   { background: #fee2e2; color: #b91c1c; }
+    [data-theme="dark"] .flash-success { background: #052e16; color: #86efac; }
+    [data-theme="dark"] .flash-error   { background: #450a0a; color: #fca5a5; }
+
+    /* ── stats ── */
+    .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+    .stat { background: var(--surface); border-radius: 10px; box-shadow: var(--shadow);
+            padding: .9rem 1.3rem; flex: 1; min-width: 110px;
+            border: 1px solid var(--border); }
+    .stat .label { font-size: .72rem; text-transform: uppercase; color: var(--text2);
+                   letter-spacing: .4px; }
+    .stat .value { font-size: 1.55rem; font-weight: 800; margin-top: .15rem; }
+
+    /* ── inline edit ── */
+    .inline-edit { cursor: pointer; border-bottom: 1px dashed var(--text3); }
+    .inline-edit:hover { border-color: var(--accent); color: var(--accent); }
+    .inline-input { display: none; }
+
+    /* ── modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+                     z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border-radius: 12px; padding: 1.75rem;
+             width: 100%; max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,.2);
+             border: 1px solid var(--border); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between;
+                    margin-bottom: 1.1rem; }
+    .modal-header h2 { margin: 0; }
+    .modal-close { background: none; border: none; font-size: 1.3rem; cursor: pointer;
+                   color: var(--text2); }
+
+    /* ── timeline ── */
+    .timeline { display: flex; flex-direction: column; gap: 0; }
+    .timeline-item { display: flex; gap: .75rem; padding: .6rem 0;
+                     border-bottom: 1px solid var(--border); font-size: .87rem; }
+    .timeline-item:last-child { border: none; }
+    .tl-icon { width: 28px; height: 28px; border-radius: 50%; display: flex;
+               align-items: center; justify-content: center; font-size: .75rem;
+               flex-shrink: 0; margin-top: .1rem; }
+    .tl-call     { background: #dbeafe; color: #1d4ed8; }
+    .tl-email    { background: #fef9c3; color: #854d0e; }
+    .tl-meeting  { background: #f0fdf4; color: #15803d; }
+    .tl-note     { background: var(--surface2); color: var(--text2); }
+    .tl-task     { background: #fce7f3; color: #9d174d; }
+    .tl-stage_change { background: var(--accent-lt); color: var(--accent); }
+    .tl-body { flex: 1; }
+    .tl-time { font-size: .75rem; color: var(--text3); white-space: nowrap; }
+
+    /* ── kbd shortcuts hint ── */
+    .kbd { display: inline-block; background: var(--surface2); border: 1px solid var(--border);
+           border-radius: 4px; padding: .05rem .35rem; font-size: .72rem;
+           font-family: monospace; color: var(--text2); }
+
+    /* ── badge status colors for jobs/invoices ── */
+    .badge-estimate    { background:#dbeafe; color:#1d4ed8; }
+    .badge-scheduled   { background:#fef9c3; color:#854d0e; }
+    .badge-in_progress { background:#fde68a; color:#92400e; }
+    .badge-completed   { background:#d1fae5; color:#065f46; }
+    .badge-invoiced    { background:var(--accent-lt); color:var(--accent); }
+    .badge-paid        { background:#dcfce7; color:#15803d; }
+    .badge-cancelled   { background:#fee2e2; color:#b91c1c; }
+    .badge-sent        { background:var(--accent-lt); color:var(--accent); }
+    .badge-partial     { background:#fef9c3; color:#854d0e; }
+    .badge-overdue     { background:#fee2e2; color:#b91c1c; }
+    .badge-void        { background:var(--surface2); color:var(--text3); }
+    [data-theme="dark"] .badge-estimate    { background:#1e3a5f; color:#93c5fd; }
+    [data-theme="dark"] .badge-scheduled   { background:#3b2f00; color:#fde68a; }
+    [data-theme="dark"] .badge-in_progress { background:#3b2000; color:#fcd34d; }
+    [data-theme="dark"] .badge-completed   { background:#052e16; color:#6ee7b7; }
+    [data-theme="dark"] .badge-invoiced    { background:#1e1b4b; color:#a5b4fc; }
+    [data-theme="dark"] .badge-paid        { background:#052e16; color:#86efac; }
+
+    /* ── mobile-first responsive ── */
+    @media (max-width: 768px) {
+      /* nav */
+      .nav-links  { display: none; }
+      .search-wrap { display: none; }
+      .hamburger  { display: block; margin-left: auto; }
+      .nav-right  { gap: .4rem; }
+      .nav-right a[title="Import CSV"],
+      .nav-right a[href="/logout"] { display: none; } /* declutter on mobile */
+
+      /* layout */
+      .container  { padding: 0 .75rem; margin-top: 1rem; }
+      h1          { font-size: 1.2rem; margin-bottom: .85rem; }
+      .card       { padding: 1rem; margin-bottom: 1rem; }
+
+      /* grids → single column */
+      .two-col,
+      [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+
+      /* tables: horizontal scroll */
+      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table       { font-size: .8rem; min-width: 480px; }
+      td, th      { padding: .38rem .45rem; }
+
+      /* make tables scroll on mobile by wrapping in .table-wrap */
+      .card table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+
+      /* stats */
+      .stat-row   { gap: .5rem; }
+      .stat       { min-width: 80px; padding: .7rem .9rem; }
+      .stat .value { font-size: 1.1rem; }
+
+      /* buttons */
+      .btn        { padding: .52rem 1rem; font-size: .85rem; min-height: 42px; }
+      .btn-sm     { padding: .38rem .7rem; font-size: .78rem; min-height: 36px; }
+
+      /* forms */
+      form input, form select, form textarea {
+        font-size: 16px !important; /* prevents iOS zoom */
+        min-height: 44px;
+        padding: .55rem .75rem;
+      }
+      form textarea { min-height: 80px; }
+      .form-actions { flex-direction: column; }
+      .form-actions .btn { width: 100%; justify-content: center; }
+
+      /* modals: full-screen on mobile */
+      .modal { max-width: 100% !important; width: 100% !important;
+               margin: 0 !important; border-radius: 16px 16px 0 0 !important;
+               position: fixed !important; bottom: 0 !important;
+               max-height: 90vh; overflow-y: auto; }
+      .modal-overlay { align-items: flex-end !important; }
+
+      /* timeline */
+      .tl-time { display: none; }
+
+      /* hide less important table columns on mobile */
+      .hide-mobile { display: none !important; }
+    }
+
+    @media (max-width: 480px) {
+      nav { padding: 0 .75rem; gap: .75rem; }
+      .brand { font-size: .95rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="brand" style="text-decoration:none;color:#c9a227">AtlasCRM</a>
+    <div class="nav-links">
+      <a href="/">{{ t('Dashboard') }}</a>
+      <a href="/contacts">{{ t('Contacts') }}</a>
+      <a href="/jobs">{{ t('Jobs') }}</a>
+      <a href="/estimates">{{ t('Estimates') }}</a>
+      <a href="/invoices">{{ t('Invoices') }}</a>
+      <a href="/schedule">{{ t('Schedule') }}</a>
+      <a href="/deals">{{ t('Deals') }}</a>
+      <a href="/drip">{{ t('Drip') }}</a>
+      <a href="/analytics">{{ t('Analytics') }}</a>
+    </div>
+    <div class="search-wrap">
+      <form action="/search" method="get">
+        <input type="text" name="q" placeholder="Search… (/)">
+        <button type="submit">Go</button>
+      </form>
+    </div>
+    <div class="nav-right">
+      <!-- language switcher -->
+      {% for code, label in languages.items() %}
+        {% if code != lang %}
+          <a href="/set-lang/{{ code }}" style="font-size:.78rem;color:var(--nav-link);border:1px solid var(--nav-link);padding:.15rem .45rem;border-radius:4px">{{ label }}</a>
+        {% endif %}
+      {% endfor %}
+      <a href="/import" title="{{ t('Import') }}">↑</a>
+      <a href="/audit" title="Audit">📋</a>
+      <a href="/settings" title="{{ t('Settings') }}">⚙</a>
+      <button class="theme-btn" id="theme-toggle" title="Toggle dark mode">🌙</button>
+      <a href="/logout" style="font-size:.78rem;color:var(--text3)">{{ t('Logout') }}</a>
+    </div>
+    <button class="hamburger" id="hamburger">☰</button>
+  </nav>
+
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="/">{{ t('Dashboard') }}</a>
+    <a href="/contacts">{{ t('Contacts') }}</a>
+    <a href="/jobs">{{ t('Jobs') }}</a>
+    <a href="/estimates">{{ t('Estimates') }}</a>
+    <a href="/invoices">{{ t('Invoices') }}</a>
+    <a href="/schedule">{{ t('Schedule') }}</a>
+    <a href="/deals">{{ t('Deals') }}</a>
+    <a href="/drip">{{ t('Drip') }}</a>
+    <a href="/analytics">{{ t('Analytics') }}</a>
+    <a href="/reminders">{{ t('Reminders') }}</a>
+    <a href="/import">{{ t('Import') }}</a>
+    <a href="/settings">{{ t('Settings') }}</a>
+    <a href="/logout">{{ t('Logout') }}</a>
+    <div style="padding:.75rem 1rem;border-top:1px solid var(--border);display:flex;gap:.5rem">
+      {% for code, label in languages.items() %}
+        <a href="/set-lang/{{ code }}" style="font-size:.85rem;{% if code == lang %}font-weight:700{% endif %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- keyboard shortcuts + theme + hamburger -->
+  <script>
+    // ── dark mode ──
+    const html    = document.documentElement;
+    const themeBtn = document.getElementById('theme-toggle');
+    const saved   = localStorage.getItem('theme') || 'light';
+    html.setAttribute('data-theme', saved);
+    themeBtn.textContent = saved === 'dark' ? '☀️' : '🌙';
+    themeBtn.addEventListener('click', () => {
+      const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      themeBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+    });
+
+    // ── hamburger ──
+    document.getElementById('hamburger').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.toggle('open');
+    });
+
+    // ── keyboard shortcuts ──
+    document.addEventListener('keydown', e => {
+      const tag = document.activeElement.tagName;
+      if (['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+      switch (e.key) {
+        case '/':
+          e.preventDefault();
+          document.querySelector('.search-wrap input, .mobile-menu')
+            && document.querySelector('nav input[name="q"]')?.focus();
+          break;
+        case 'n':
+          if (window.location.pathname === '/contacts') location.href='/contacts/new';
+          else if (window.location.pathname === '/deals') location.href='/deals/new';
+          break;
+        case 'g':
+          if (!e.shiftKey) { e.preventDefault(); location.href='/'; } break;
+        case 'c':
+          e.preventDefault(); location.href='/contacts'; break;
+        case 'd':
+          e.preventDefault(); location.href='/deals'; break;
+        case '?':
+          document.getElementById('shortcut-modal')?.classList.toggle('open'); break;
+      }
+    });
+
+    // ── inline editing ──
+    document.querySelectorAll('.inline-edit').forEach(el => {
+      el.addEventListener('click', () => {
+        const input = document.getElementById(el.dataset.target);
+        if (!input) return;
+        el.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.focus();
+        input.addEventListener('blur', () => {
+          if (!input.value.trim()) { el.style.display=''; input.style.display='none'; return; }
+          const form = input.closest('form');
+          if (form) form.submit();
+        }, { once: true });
+      });
+    });
+
+    // ── modal helpers ──
+    window.openModal = id => document.getElementById(id)?.classList.add('open');
+    window.closeModal = id => document.getElementById(id)?.classList.remove('open');
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+    });
+  </script>
+
+  <!-- shortcuts cheat-sheet modal -->
+  <div class="modal-overlay" id="shortcut-modal">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-header">
+        <h2>Keyboard Shortcuts</h2>
+        <button class="modal-close" onclick="closeModal('shortcut-modal')">✕</button>
+      </div>
+      <table>
+        <tr><td><span class="kbd">/</span></td><td>Focus search</td></tr>
+        <tr><td><span class="kbd">n</span></td><td>New contact / deal (on list page)</td></tr>
+        <tr><td><span class="kbd">g</span></td><td>Go to dashboard</td></tr>
+        <tr><td><span class="kbd">c</span></td><td>Go to contacts</td></tr>
+        <tr><td><span class="kbd">d</span></td><td>Go to deals</td></tr>
+        <tr><td><span class="kbd">?</span></td><td>Show / hide this panel</td></tr>
+      </table>
+      <p style="margin-top:.75rem;font-size:.8rem;color:var(--text3)">Shortcuts are disabled when typing in a field.</p>
+    </div>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

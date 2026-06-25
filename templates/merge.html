@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Merge Contacts') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Merge Contacts') }}</h1>
+<p style="color:#6b7280;font-size:.9rem;margin-bottom:1.5rem">
+  {{ t('All deals, notes, activities, and tags from the source contact will be moved to the target contact, then the source will be deleted.') }}
+</p>
+
+{% if result %}
+<div class="flash flash-success">{{ result }}</div>
+{% endif %}
+
+<div class="card">
+  <form method="post">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+      <div>
+        <label>{{ t('Source contact') }} <span style="font-weight:400;color:#6b7280">({{ t('will be deleted') }})</span></label>
+        <select name="source_id" required>
+          <option value="">{{ t('— select —') }}</option>
+          {% for c in contacts %}
+            <option value="{{ c.id }}" {{ "selected" if source and source == c.id|string }}>
+              #{{ c.id }} {{ c.first_name }} {{ c.last_name }}{% if c.company %} ({{ c.company }}){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>{{ t('Target contact') }} <span style="font-weight:400;color:#6b7280">({{ t('will be kept') }})</span></label>
+        <select name="target_id" required>
+          <option value="">{{ t('— select —') }}</option>
+          {% for c in contacts %}
+            <option value="{{ c.id }}" {{ "selected" if target and target == c.id|string }}>
+              #{{ c.id }} {{ c.first_name }} {{ c.last_name }}{% if c.company %} ({{ c.company }}){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-actions" style="margin-top:1.25rem">
+      <button class="btn btn-danger" type="submit"
+              onclick="return confirm('{{ t('Merge Contacts? The source will be permanently deleted.') }}')">
+        {{ t('Merge Contacts') }}
+      </button>
+      <a href="/contacts" class="btn btn-ghost">{{ t('Cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

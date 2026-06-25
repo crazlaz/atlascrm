@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Crew') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+  <h1>{{ t('Crew') }}</h1>
+  <button class="btn btn-primary" onclick="openModal('new-member-modal')">{{ t('+ Add Member') }}</button>
+</div>
+
+{% if members %}
+<div class="card" style="padding:0">
+  <table>
+    <thead>
+      <tr><th>{{ t('Name') }}</th><th>{{ t('Role') }}</th><th>{{ t('Phone') }}</th><th class="hide-mobile">{{ t('Pay Rate') }}</th><th>{{ t('Status') }}</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for m in members %}
+      <tr>
+        <td><strong>{{ m.name }}</strong></td>
+        <td style="color:var(--text2)">{{ m.role or '—' }}</td>
+        <td>{% if m.phone %}<a href="tel:{{ m.phone }}">{{ m.phone }}</a>{% else %}—{% endif %}</td>
+        <td class="hide-mobile">${{ "%.2f"|format(m.pay_rate) }}/hr</td>
+        <td>
+          <span class="badge {{ 'badge-won' if m.active else 'badge-lost' }}">
+            {{ t('Active') if m.active else t('Inactive') }}
+          </span>
+        </td>
+        <td>
+          <button class="btn btn-ghost btn-sm"
+                  onclick="openEdit({{ m.id }}, '{{ m.name }}', '{{ m.role or '' }}',
+                                    '{{ m.phone or '' }}', '{{ m.email or '' }}',
+                                    {{ m.pay_rate }}, {{ m.active }})">{{ t('Edit') }}</button>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:2.5rem;color:var(--text3)">
+  {{ t('No crew members yet. Add your first one above.') }}
+</div>
+{% endif %}
+
+<div class="modal-overlay" id="new-member-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Add Crew Member') }}</h2>
+      <button class="modal-close" onclick="closeModal('new-member-modal')">✕</button>
+    </div>
+    <form method="post" action="/crew/new">
+      <label>{{ t('Full Name *') }}</label>
+      <input type="text" name="name" required placeholder="{{ t('Carlos Rivera') }}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div><label>{{ t('Role') }}</label><input type="text" name="role" placeholder="{{ t('Foreman, Laborer…') }}"></div>
+        <div><label>{{ t('Pay Rate ($/hr)') }}</label><input type="number" name="pay_rate" step="0.50" min="0" value="0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div><label>{{ t('Phone') }}</label><input type="text" name="phone" placeholder="(555) 000-0000"></div>
+        <div><label>{{ t('Email') }}</label><input type="email" name="email" placeholder="{{ t('crew@example.com') }}"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Add Member') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('new-member-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-member-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>{{ t('Edit Crew Member') }}</h2>
+      <button class="modal-close" onclick="closeModal('edit-member-modal')">✕</button>
+    </div>
+    <form method="post" id="edit-form">
+      <label>{{ t('Full Name *') }}</label>
+      <input type="text" name="name" id="edit-name" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div><label>{{ t('Role') }}</label><input type="text" name="role" id="edit-role"></div>
+        <div><label>{{ t('Pay Rate ($/hr)') }}</label><input type="number" name="pay_rate" id="edit-pay" step="0.50" min="0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div><label>{{ t('Phone') }}</label><input type="text" name="phone" id="edit-phone"></div>
+        <div><label>{{ t('Email') }}</label><input type="email" name="email" id="edit-email"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:.5rem;margin-top:.75rem;cursor:pointer">
+        <input type="checkbox" name="active" value="1" id="edit-active" style="width:auto;margin:0"> {{ t('Active') }}
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{{ t('Save Changes') }}</button>
+        <button class="btn btn-ghost" type="button" onclick="closeModal('edit-member-modal')">{{ t('Cancel') }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openEdit(id, name, role, phone, email, pay, active) {
+  document.getElementById('edit-form').action = '/crew/' + id + '/edit';
+  document.getElementById('edit-name').value  = name;
+  document.getElementById('edit-role').value  = role;
+  document.getElementById('edit-phone').value = phone;
+  document.getElementById('edit-email').value = email;
+  document.getElementById('edit-pay').value   = pay;
+  document.getElementById('edit-active').checked = !!active;
+  openModal('edit-member-modal');
+}
+</script>
+{% endblock %}

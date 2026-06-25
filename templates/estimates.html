@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Estimates') }} — crmpy{% endblock %}
+{% block content %}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <h1>{{ t('Estimates') }}</h1>
+  <a href="/estimates/new" class="btn btn-primary">{{ t('+ New Estimate') }}</a>
+</div>
+
+<div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem">
+  {% for s in ['','draft','sent','approved','rejected','expired'] %}
+  <a href="/estimates{{ '?status='+s if s else '' }}"
+     class="btn btn-sm {{ 'btn-primary' if filter_status==s else 'btn-ghost' }}">
+    {{ s.title() if s else t('All') }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card" style="padding:0">
+  <table>
+    <thead>
+      <tr><th>#</th><th>{{ t('Client') }}</th><th>{{ t('Status') }}</th><th>{{ t('Valid Until') }}</th><th>{{ t('Created') }}</th><th style="text-align:right">{{ t('Actions') }}</th></tr>
+    </thead>
+    <tbody>
+    {% for e in estimates %}
+      <tr>
+        <td><a href="/estimates/{{ e.id }}"><strong>{{ e.estimate_number }}</strong></a></td>
+        <td><a href="/contacts/{{ e.contact_id }}">{{ e.contact_name }}</a></td>
+        <td><span class="badge">{{ e.status }}</span></td>
+        <td style="color:var(--text3);font-size:.83rem">{{ e.valid_until or '—' }}</td>
+        <td style="color:var(--text3);font-size:.83rem">{{ e.created_at[:10] }}</td>
+        <td style="text-align:right;white-space:nowrap">
+          <a href="/estimates/{{ e.id }}" class="btn btn-ghost btn-sm">{{ t('View') }}</a>
+          <a href="/estimates/{{ e.id }}/print" target="_blank" class="btn btn-ghost btn-sm">{{ t('Print') }}</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" style="color:var(--text3);padding:2rem;text-align:center">
+        {{ t('No estimates yet.') }} <a href="/estimates/new">{{ t('Create the first one.') }}</a>
+      </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

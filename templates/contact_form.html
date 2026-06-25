@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ t('Edit Contact') if contact else t('New Contact') }} — crmpy{% endblock %}
+{% block content %}
+<h1>{{ t('Edit Contact') if contact else t('New Contact') }}</h1>
+<div class="card">
+  <form method="post">
+    <label>{{ t('First Name') }}</label>
+    <input type="text" name="first_name" value="{{ contact.first_name if contact else '' }}" required>
+    <label>{{ t('Last Name') }}</label>
+    <input type="text" name="last_name" value="{{ contact.last_name if contact else '' }}" required>
+    <label>{{ t('Email') }}</label>
+    <input type="email" name="email" value="{{ contact.email if contact else '' }}">
+    <label>{{ t('Phone') }}</label>
+    <input type="text" name="phone" value="{{ contact.phone if contact else '' }}">
+    <label>{{ t('Company') }}</label>
+    <input type="text" name="company" value="{{ contact.company if contact else '' }}">
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">{{ t('Save') }}</button>
+      <a href="/contacts{% if contact %}/{{ contact.id }}{% endif %}" class="btn btn-ghost">{{ t('Cancel') }}</a>
+      {% if contact %}
+        <form method="post" action="/contacts/{{ contact.id }}/delete" style="margin:0">
+          <button class="btn btn-danger btn-sm" onclick="return confirm('{{ t('Delete this contact?') }}')">{{ t('Delete') }}</button>
+        </form>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}
