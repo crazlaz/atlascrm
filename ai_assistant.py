@@ -63,7 +63,8 @@ def draft_email(contact_id: int, instruction: str = "") -> str:
     if not ctx:
         return "Contact not found."
     prompt = (
-        f"You are a helpful CRM assistant for a hardscaping/lawn company. "
+        f"You are a helpful CRM assistant for a software & web development agency "
+        f"that builds CRM systems, websites, and web apps for small businesses. "
         f"Based on this contact's history, draft a professional follow-up email.\n\n"
         f"{ctx}\n\n"
         f"Additional instruction: {instruction or 'Write a warm, professional follow-up email.'}\n\n"

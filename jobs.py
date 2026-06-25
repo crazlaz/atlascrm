@@ -1,9 +1,10 @@
-"""Hardscaping job management."""
+"""Software & web project management."""
 from db import get_connection
 from activity import log_activity
 
-JOB_TYPES = ['patio','retaining_wall','driveway','walkway','steps',
-             'lawn_care','drainage','lighting','cleanup','other']
+JOB_TYPES = ['website_build','web_app','crm_setup','ecommerce',
+             'integration','migration','maintenance','support',
+             'consulting','other']
 
 STATUS_ORDER = ['estimate','scheduled','in_progress','completed','invoiced','paid','cancelled']
 
