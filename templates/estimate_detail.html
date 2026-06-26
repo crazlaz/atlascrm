@@ -187,7 +187,7 @@
     </div>
     <form method="post" action="/estimates/{{ est.id }}/items">
       <label>{{ t('Description') }}</label>
-      <input type="text" name="description" required placeholder="{{ t('e.g. Paver base prep') }}">
+      <input type="text" name="description" required placeholder="{{ t('e.g. Custom CRM integration') }}">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
         <div><label>{{ t('Qty') }}</label><input type="number" name="quantity" value="1" step="0.5" min="0" required></div>
         <div><label>{{ t('Unit') }}</label><input type="text" name="unit" value="each"></div>

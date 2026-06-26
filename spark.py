@@ -123,8 +123,26 @@ def contact_scores() -> list[dict]:
 
 def import_contacts_csv(path: str) -> dict:
     import pandas as pd
-    df    = pd.read_csv(path)
-    total = len(df)
+    df = pd.read_csv(path)
+
+    # normalize headers: lowercase + underscores, and handle common aliases
+    df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+    aliases = {
+        "firstname": "first_name", "fname": "first_name",
+        "lastname":  "last_name",  "lname": "last_name",
+        "emailaddress": "email",   "e-mail": "email",
+        "phonenumber": "phone",    "phone_number": "phone",
+        "companyname": "company",  "organization": "company",
+    }
+    df.rename(columns=aliases, inplace=True)
+
+    # if there's a single "name" column, split it
+    if "name" in df.columns and "first_name" not in df.columns:
+        split = df["name"].str.strip().str.split(r"\s+", n=1, expand=True)
+        df["first_name"] = split[0]
+        df["last_name"]  = split[1] if split.shape[1] > 1 else ""
+
+    total   = len(df)
     missing = [c for c in ["first_name", "last_name"] if c not in df.columns]
     if missing:
         raise ValueError(

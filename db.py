@@ -205,15 +205,15 @@ def init_db():
                 created_at    TEXT DEFAULT (datetime('now'))
             );
 
-            -- ── Hardscaping: Jobs ──────────────────────────────────────────
+            -- ── Software/Web: Jobs ─────────────────────────────────────────
             CREATE TABLE IF NOT EXISTS jobs (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 contact_id   INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
                 title        TEXT NOT NULL,
                 job_type     TEXT NOT NULL DEFAULT 'other'
-                                 CHECK(job_type IN ('patio','retaining_wall','driveway',
-                                                    'walkway','steps','lawn_care','drainage',
-                                                    'lighting','cleanup','other')),
+                                 CHECK(job_type IN ('website_build','web_app','crm_setup',
+                                                    'ecommerce','integration','migration',
+                                                    'maintenance','support','consulting','other')),
                 status       TEXT NOT NULL DEFAULT 'estimate'
                                  CHECK(status IN ('estimate','scheduled','in_progress',
                                                   'completed','invoiced','paid','cancelled')),
@@ -229,7 +229,7 @@ def init_db():
                 updated_at   TEXT DEFAULT (datetime('now'))
             );
 
-            -- ── Hardscaping: Service Catalog ───────────────────────────────
+            -- ── Software/Web: Service Catalog ────────────────────────────
             CREATE TABLE IF NOT EXISTS service_catalog (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 category    TEXT NOT NULL DEFAULT 'general',
@@ -241,7 +241,7 @@ def init_db():
                 created_at  TEXT DEFAULT (datetime('now'))
             );
 
-            -- ── Hardscaping: Estimates ─────────────────────────────────────
+            -- ── Software/Web: Estimates ──────────────────────────────────
             CREATE TABLE IF NOT EXISTS estimates (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 job_id          INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
@@ -269,7 +269,7 @@ def init_db():
                 sort_order   INTEGER NOT NULL DEFAULT 0
             );
 
-            -- ── Hardscaping: Invoices ──────────────────────────────────────
+            -- ── Software/Web: Invoices ───────────────────────────────────
             CREATE TABLE IF NOT EXISTS invoices (
                 id             INTEGER PRIMARY KEY AUTOINCREMENT,
                 job_id         INTEGER REFERENCES jobs(id) ON DELETE SET NULL,
@@ -298,7 +298,7 @@ def init_db():
                 sort_order   INTEGER NOT NULL DEFAULT 0
             );
 
-            -- ── Hardscaping: Payments ──────────────────────────────────────
+            -- ── Software/Web: Payments ───────────────────────────────────
             CREATE TABLE IF NOT EXISTS payments (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 invoice_id  INTEGER NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
@@ -311,7 +311,7 @@ def init_db():
                 created_at  TEXT DEFAULT (datetime('now'))
             );
 
-            -- ── Hardscaping: Job Photos ────────────────────────────────────
+            -- ── Software/Web: Job Photos ─────────────────────────────────
             CREATE TABLE IF NOT EXISTS job_photos (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
                 job_id      INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
@@ -324,7 +324,7 @@ def init_db():
                 created_at  TEXT DEFAULT (datetime('now'))
             );
 
-            -- ── Hardscaping: Job Schedule ──────────────────────────────────
+            -- ── Software/Web: Job Schedule ──────────────────────────────
             CREATE TABLE IF NOT EXISTS job_schedule (
                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
                 job_id       INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
@@ -333,7 +333,7 @@ def init_db():
                 created_at   TEXT DEFAULT (datetime('now'))
             );
 
-            -- ── Hardscaping: Company Settings ─────────────────────────────
+            -- ── Software/Web: Company Settings ──────────────────────────
             CREATE TABLE IF NOT EXISTS company_settings (
                 id           INTEGER PRIMARY KEY CHECK(id=1),
                 name         TEXT,

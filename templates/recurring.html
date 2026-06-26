@@ -52,7 +52,7 @@
 {% else %}
 <div class="card" style="text-align:center;padding:2.5rem;color:var(--text3)">
   <p>{{ t('No recurring contracts yet.') }}</p>
-  <p style="font-size:.85rem;margin-top:.5rem">{{ t('Great for monthly lawn care, seasonal maintenance, or any regular billing.') }}</p>
+  <p style="font-size:.85rem;margin-top:.5rem">{{ t('Great for monthly hosting, maintenance retainers, or any regular billing.') }}</p>
 </div>
 {% endif %}
 
@@ -64,7 +64,7 @@
     </div>
     <form method="post" action="/recurring/new">
       <label>{{ t('Contract Name *') }}</label>
-      <input type="text" name="name" placeholder="{{ t('Monthly Lawn Maintenance') }}" required>
+      <input type="text" name="name" placeholder="{{ t('Monthly Website Maintenance') }}" required>
       <label>{{ t('Client *') }}</label>
       <select name="contact_id" required>
         <option value="">{{ t('— select client —') }}</option>
