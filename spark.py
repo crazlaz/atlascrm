@@ -123,8 +123,14 @@ def contact_scores() -> list[dict]:
 
 def import_contacts_csv(path: str) -> dict:
     import pandas as pd
-    df      = pd.read_csv(path)
-    total   = len(df)
+    df    = pd.read_csv(path)
+    total = len(df)
+    missing = [c for c in ["first_name", "last_name"] if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"CSV is missing columns: {', '.join(missing)}. "
+            "Use the 'Import Contractor Leads' section above for that format."
+        )
     valid   = df.dropna(subset=["first_name", "last_name"])
     invalid = total - len(valid)
     valid   = valid.drop_duplicates(subset=["email"])

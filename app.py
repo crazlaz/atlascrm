@@ -581,10 +581,79 @@ def import_contacts():
     if request.method == "POST":
         f = request.files.get("file")
         if f and f.filename.endswith(".csv"):
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
-            f.save(tmp.name)
-            result = SP.import_contacts_csv(tmp.name)
-            os.unlink(tmp.name)
+            import csv as _csv, io as _io
+            raw = f.stream.read()
+            headers = next(_csv.DictReader(_io.StringIO(raw.decode("utf-8", errors="replace"))), None)
+            # Auto-route: if CSV has "Company Name" but not "first_name", treat as leads import
+            if headers and "Company Name" in headers and "first_name" not in headers:
+                rows = list(_csv.DictReader(_io.StringIO(raw.decode("utf-8", errors="replace"))))
+
+                def _bg_import(rows):
+                    import sqlite3 as _sq
+                    from db import DB_PATH as _db
+                    with _sq.connect(_db, timeout=30) as conn:
+                        conn.execute("PRAGMA journal_mode=WAL")
+                        for row in rows:
+                            company_name = row.get("Company Name", "").strip()
+                            if not company_name:
+                                continue
+                            parts = company_name.split()
+                            first = parts[0]
+                            last  = " ".join(parts[1:]) if len(parts) > 1 else "—"
+                            email    = row.get("Email", "").strip() or None
+                            phone    = row.get("Phone", "").strip() or None
+                            website  = row.get("Website", "").strip()
+                            linkedin = row.get("LinkedIn", "").strip()
+                            facebook = row.get("Facebook", "").strip()
+                            address  = row.get("Address", "").strip()
+                            rating   = row.get("Google Rating", "").strip()
+                            reviews  = row.get("# Reviews", "").strip()
+                            category = row.get("Category", "").strip()
+                            try:
+                                cur = conn.execute(
+                                    "INSERT OR IGNORE INTO contacts (first_name, last_name, email, phone, company) VALUES (?,?,?,?,?)",
+                                    (first, last, email, phone, company_name)
+                                )
+                                cid = cur.lastrowid or conn.execute(
+                                    "SELECT id FROM contacts WHERE company=?", (company_name,)
+                                ).fetchone()[0]
+                                note_parts = []
+                                if website:  note_parts.append(f"Website: {website}")
+                                if linkedin: note_parts.append(f"LinkedIn: {linkedin}")
+                                if facebook: note_parts.append(f"Facebook: {facebook}")
+                                if address:  note_parts.append(f"Address: {address}")
+                                if rating:   note_parts.append(f"Google Rating: {rating} ⭐ ({reviews} reviews)")
+                                if note_parts:
+                                    conn.execute("INSERT INTO notes (body, contact_id) VALUES (?,?)", ("\n".join(note_parts), cid))
+                                if category:
+                                    conn.execute("INSERT OR IGNORE INTO tags (contact_id, tag) VALUES (?,?)", (cid, category))
+                                conn.execute(
+                                    "INSERT OR IGNORE INTO deals (contact_id, title, value, stage) VALUES (?,?,?,?)",
+                                    (cid, f"Outreach — {company_name}", 0, "lead")
+                                )
+                                conn.execute(
+                                    "INSERT INTO activities (type, body, contact_id) VALUES (?,?,?)",
+                                    ("note", f"Imported as lead — {category or 'Lead'}", cid)
+                                )
+                            except Exception:
+                                pass
+                        conn.commit()
+
+                import threading
+                threading.Thread(target=_bg_import, args=(rows,), daemon=True).start()
+                flash(f"Import started — {len(rows)} rows queued. Refresh Contacts in a few seconds to see your leads.", "success")
+            else:
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+                tmp.write(raw)
+                tmp.flush()
+                try:
+                    result = SP.import_contacts_csv(tmp.name)
+                except ValueError as e:
+                    flash(str(e), "error")
+                except Exception as e:
+                    flash(f"Import failed: {e}", "error")
+                finally:
+                    os.unlink(tmp.name)
         else:
             flash("Please upload a .csv file.", "error")
     return render_template("import.html", result=result)
@@ -599,51 +668,62 @@ def import_leads():
         flash("Please upload a .csv file.", "error")
         return redirect(url_for("import_contacts"))
 
-    stream  = io.StringIO(f.stream.read().decode("utf-8", errors="replace"))
-    reader  = _csv.DictReader(stream)
-    inserted = skipped = 0
+    rows = list(_csv.DictReader(io.StringIO(f.stream.read().decode("utf-8", errors="replace"))))
 
-    for row in reader:
-        company_name = row.get("Company Name", "").strip()
-        if not company_name:
-            continue
+    def _bg_import(rows):
+        import sqlite3 as _sq
+        from db import DB_PATH as _db
+        with _sq.connect(_db, timeout=30) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
+            for row in rows:
+                company_name = row.get("Company Name", "").strip()
+                if not company_name:
+                    continue
+                parts = company_name.split()
+                first = parts[0]
+                last  = " ".join(parts[1:]) if len(parts) > 1 else "—"
+                email    = row.get("Email", "").strip() or None
+                phone    = row.get("Phone", "").strip() or None
+                website  = row.get("Website", "").strip()
+                linkedin = row.get("LinkedIn", "").strip()
+                facebook = row.get("Facebook", "").strip()
+                address  = row.get("Address", "").strip()
+                rating   = row.get("Google Rating", "").strip()
+                reviews  = row.get("# Reviews", "").strip()
+                category = row.get("Category", "").strip()
+                try:
+                    cur = conn.execute(
+                        "INSERT OR IGNORE INTO contacts (first_name, last_name, email, phone, company) VALUES (?,?,?,?,?)",
+                        (first, last, email, phone, company_name)
+                    )
+                    cid = cur.lastrowid or conn.execute(
+                        "SELECT id FROM contacts WHERE company=?", (company_name,)
+                    ).fetchone()[0]
+                    note_parts = []
+                    if website:  note_parts.append(f"Website: {website}")
+                    if linkedin: note_parts.append(f"LinkedIn: {linkedin}")
+                    if facebook: note_parts.append(f"Facebook: {facebook}")
+                    if address:  note_parts.append(f"Address: {address}")
+                    if rating:   note_parts.append(f"Google Rating: {rating} ⭐ ({reviews} reviews)")
+                    if note_parts:
+                        conn.execute("INSERT INTO notes (body, contact_id) VALUES (?,?)", ("\n".join(note_parts), cid))
+                    if category:
+                        conn.execute("INSERT OR IGNORE INTO tags (contact_id, tag) VALUES (?,?)", (cid, category))
+                    conn.execute(
+                        "INSERT OR IGNORE INTO deals (contact_id, title, value, stage) VALUES (?,?,?,?)",
+                        (cid, f"Outreach — {company_name}", 0, "lead")
+                    )
+                    conn.execute(
+                        "INSERT INTO activities (type, body, contact_id) VALUES (?,?,?)",
+                        ("note", f"Imported as lead — {category or 'Lead'}", cid)
+                    )
+                except Exception:
+                    pass
+            conn.commit()
 
-        parts = company_name.split()
-        first = parts[0]
-        last  = " ".join(parts[1:]) if len(parts) > 1 else "—"
-
-        email    = row.get("Email", "").strip() or None
-        phone    = row.get("Phone", "").strip() or None
-        website  = row.get("Website", "").strip()
-        linkedin = row.get("LinkedIn", "").strip()
-        facebook = row.get("Facebook", "").strip()
-        address  = row.get("Address", "").strip()
-        rating   = row.get("Google Rating", "").strip()
-        reviews  = row.get("# Reviews", "").strip()
-        category = row.get("Category", "").strip()
-
-        try:
-            cid = C.add_contact(first, last, email, phone, company_name)
-
-            note_parts = []
-            if website:  note_parts.append(f"Website: {website}")
-            if linkedin: note_parts.append(f"LinkedIn: {linkedin}")
-            if facebook: note_parts.append(f"Facebook: {facebook}")
-            if address:  note_parts.append(f"Address: {address}")
-            if rating:   note_parts.append(f"Google Rating: {rating} ⭐ ({reviews} reviews)")
-            if note_parts:
-                N.add_note("\n".join(note_parts), contact_id=cid)
-
-            if category:
-                C.tag_contact(cid, category)
-
-            D.add_deal(cid, f"Contractor Outreach — {company_name}", 0, "lead")
-            A.log_activity("note", f"Imported as lead — {category or 'Contractor'}", contact_id=cid)
-            inserted += 1
-        except Exception:
-            skipped += 1
-
-    flash(f"Import complete: {inserted} leads added, {skipped} skipped (duplicates).", "success")
+    import threading
+    threading.Thread(target=_bg_import, args=(rows,), daemon=True).start()
+    flash(f"Import started — {len(rows)} rows queued. Refresh Contacts in a few seconds to see your leads.", "success")
     return redirect(url_for("import_contacts"))
 
 
