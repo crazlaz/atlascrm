@@ -983,6 +983,7 @@ def contact_ai(cid):
 # ── lead capture (public, no login required) ──────────────────────────────────
 
 ALLOWED_ORIGINS = [
+    "https://atlasent.netlify.app",
     "http://localhost:5002",
     "http://127.0.0.1:5002",
 ]
